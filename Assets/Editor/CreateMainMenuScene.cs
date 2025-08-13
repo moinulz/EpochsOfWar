@@ -8,6 +8,32 @@ using UnityEngine.InputSystem.UI;
 
 public static class CreateMainMenuScene
 {
+    [MenuItem("Tools/Project Setup/Upgrade EventSystems to Input System")]
+    public static void UpgradeEventSystemsInOpenScenes()
+    {
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            var scene = SceneManager.GetSceneAt(i);
+            if (!scene.isLoaded) continue;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var eventSystems = root.GetComponentsInChildren<UnityEngine.EventSystems.EventSystem>(true);
+                foreach (var ev in eventSystems)
+                {
+                    var go = ev.gameObject;
+                    var legacy = go.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+                    var newMod = go.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+                    if (legacy != null)
+                    {
+                        Object.DestroyImmediate(legacy, true);
+                        if (newMod == null) go.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+                        EditorSceneManager.MarkSceneDirty(scene);
+                    }
+                }
+            }
+        }
+        EditorUtility.DisplayDialog("Upgrade Complete", "Replaced StandaloneInputModule with InputSystemUIInputModule in loaded scenes.", "OK");
+    }
     [MenuItem("Tools/Project Setup/Create Main Menu %#m")] // Ctrl/Cmd+Shift+M
     public static void CreateMenuAndScenes()
     {
@@ -34,11 +60,11 @@ cam.transform.rotation = Quaternion.identity;
 
         // Canvas
         var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        var canvas = canvasGO.GetComponent<Canvas>();
+    var canvas = canvasGO.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080, 1920);
+    scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+    scaler.referenceResolution = new Vector2(1920, 1080);
 
         // Background panel
         var bg = new GameObject("Background", typeof(Image));
@@ -49,12 +75,12 @@ cam.transform.rotation = Quaternion.identity;
         bg.GetComponent<Image>().color = new Color(0.05f, 0.08f, 0.12f, 1f);
 
         // Title
-        var title = new GameObject("Title", typeof(Text));
+    var title = new GameObject("Title", typeof(Text));
         title.transform.SetParent(canvasGO.transform, false);
         var titleTxt = title.GetComponent<Text>();
         titleTxt.text = "Epochs of War";
         titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    titleTxt.font = GetDefaultFont();
         titleTxt.fontSize = 72;
         titleTxt.color = Color.white;
         var titleRect = title.GetComponent<RectTransform>();
@@ -70,7 +96,8 @@ cam.transform.rotation = Quaternion.identity;
             var go = new GameObject(name, typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
             var img = go.GetComponent<Image>();
-            img.color = new Color(0.2f, 0.3f, 0.45f, 1f);
+            // Higher contrast background for readability
+            img.color = new Color(0.15f, 0.22f, 0.36f, 1f);
             var rect = go.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(600, 140);
 
@@ -79,8 +106,8 @@ cam.transform.rotation = Quaternion.identity;
             var t = textGO.GetComponent<Text>();
             t.text = label;
             t.alignment = TextAnchor.MiddleCenter;
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            t.color = Color.white;
+            t.font = GetDefaultFont();
+            t.color = new Color(1f, 1f, 1f, 0.97f);
             t.fontSize = 42;
             var tr = textGO.GetComponent<RectTransform>();
             tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
@@ -89,24 +116,39 @@ cam.transform.rotation = Quaternion.identity;
             return go.GetComponent<Button>();
         }
 
-        // Vertical button group
-        var group = new GameObject("Buttons", typeof(RectTransform));
+    // Vertical button group with layout
+    var group = new GameObject("Buttons", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         group.transform.SetParent(canvasGO.transform, false);
         var gRect = group.GetComponent<RectTransform>();
-        gRect.anchorMin = new Vector2(0.5f, 0.5f);
-        gRect.anchorMax = new Vector2(0.5f, 0.5f);
+    gRect.anchorMin = new Vector2(0.5f, 0.5f);
+    gRect.anchorMax = new Vector2(0.5f, 0.5f);
         gRect.pivot = new Vector2(0.5f, 0.5f);
-        gRect.anchoredPosition = new Vector2(0, -100);
-        gRect.sizeDelta = new Vector2(650, 700);
+    gRect.anchoredPosition = new Vector2(0, -80);
+    gRect.sizeDelta = new Vector2(700, 0);
+
+    var vlg = group.GetComponent<VerticalLayoutGroup>();
+    vlg.spacing = 24f;
+    vlg.childAlignment = TextAnchor.MiddleCenter;
+    vlg.childControlWidth = true;
+    vlg.childControlHeight = true;
+    vlg.childForceExpandWidth = false;
+    vlg.childForceExpandHeight = false;
+    vlg.padding = new RectOffset(0, 0, 0, 0);
+
+    var fitter = group.GetComponent<ContentSizeFitter>();
+    fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+    fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var playBtn = MakeButton(group.transform, "PlayButton", "Play");
         var settingsBtn = MakeButton(group.transform, "SettingsButton", "Settings");
         var quitBtn = MakeButton(group.transform, "QuitButton", "Quit");
 
-        // Position buttons
-        playBtn.transform.localPosition = new Vector3(0, 160, 0);
-        settingsBtn.transform.localPosition = new Vector3(0, 0, 0);
-        quitBtn.transform.localPosition = new Vector3(0, -160, 0);
+        // Let VerticalLayoutGroup handle positioning; ensure consistent size
+        foreach (var b in new[] { playBtn, settingsBtn, quitBtn })
+        {
+            var br = b.GetComponent<RectTransform>();
+            br.sizeDelta = new Vector2(600, 120);
+        }
 
         // Settings panel (hidden)
         var settingsPanel = new GameObject("SettingsPanel", typeof(Image));
@@ -134,7 +176,7 @@ cam.transform.rotation = Quaternion.identity;
         var stText = settingsTitle.GetComponent<Text>();
         stText.text = "Settings";
         stText.alignment = TextAnchor.MiddleCenter;
-        stText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    stText.font = GetDefaultFont();
         stText.fontSize = 48;
         stText.color = Color.white;
         var stRect = settingsTitle.GetComponent<RectTransform>();
@@ -177,7 +219,7 @@ cam.transform.rotation = Quaternion.identity;
         var pl = progLabel.GetComponent<Text>();
         pl.text = "0%";
         pl.alignment = TextAnchor.MiddleCenter;
-        pl.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+    pl.font = GetDefaultFont();
         pl.color = Color.white;
         var plRect = progLabel.GetComponent<RectTransform>();
         plRect.sizeDelta = new Vector2(300, 80);
@@ -217,27 +259,20 @@ cam.transform.rotation = Quaternion.identity;
         gameEventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
         gameEventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         
-        // Setup main camera for top-down view
+        // Setup main camera for RTS-style view
         var mainCam = Camera.main;
         if (mainCam != null)
         {
-            mainCam.transform.position = new Vector3(0, 25, -15); // Higher and further back
-            mainCam.transform.rotation = Quaternion.Euler(60, 0, 0); // Steeper angle
-            mainCam.fieldOfView = 60f; // Wider field of view
+            mainCam.transform.position = new Vector3(0, 20, -12); // RTS camera position
+            mainCam.transform.rotation = Quaternion.Euler(45, 0, 0); // RTS angle (45 degrees)
+            mainCam.fieldOfView = 60f; // Good field of view for RTS
             mainCam.farClipPlane = 1000f; // Ensure we can see far objects
             mainCam.gameObject.AddComponent<CameraController>();
         }
         
-        // Create ground plane
-        var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        ground.name = "Ground";
-        ground.transform.position = Vector3.zero;
-        ground.transform.localScale = new Vector3(50, 1, 50); // 500x500 units (much larger)
-        
-        // Create a simple material for the ground
-        var groundMaterial = new Material(Shader.Find("Standard"));
-        groundMaterial.color = new Color(0.3f, 0.6f, 0.3f, 1f); // Green ground
-        ground.GetComponent<Renderer>().material = groundMaterial;
+        // Create ground plane with multiple quads for better terrain
+        var terrainParent = new GameObject("Terrain");
+        CreateRTSTerrain(terrainParent.transform);
         
         // Try to place Capital prefab
         var capitalPrefabPath = "Assets/Prefabs/Buildings/Capital.prefab";
@@ -245,7 +280,7 @@ cam.transform.rotation = Quaternion.identity;
         if (capitalPrefab != null)
         {
             var capital = PrefabUtility.InstantiatePrefab(capitalPrefab) as GameObject;
-            capital.transform.position = new Vector3(0, 0, 0); // Place on ground
+            capital.transform.position = new Vector3(0, 5f, 0); // Place above ground (y=5 to account for scaling)
             capital.transform.localScale = new Vector3(10, 10, 10); // Make it much larger
             capital.name = "Capital";
         }
@@ -254,7 +289,7 @@ cam.transform.rotation = Quaternion.identity;
             // Fallback: create a large cube if prefab not found
             var capital = GameObject.CreatePrimitive(PrimitiveType.Cube);
             capital.name = "Capital (Placeholder)";
-            capital.transform.position = new Vector3(0, 5f, 0); // Elevated so it's visible
+            capital.transform.position = new Vector3(0, 5f, 0); // Elevated so it's visible on ground
             capital.transform.localScale = new Vector3(10, 10, 10); // 10x10x10 units
             var capitalMaterial = new Material(Shader.Find("Standard"));
             capitalMaterial.color = new Color(0.8f, 0.6f, 0.2f, 1f); // Golden color
@@ -276,14 +311,13 @@ cam.transform.rotation = Quaternion.identity;
         
         // Create UI Canvas for mobile controls
         var gameCanvas = new GameObject("GameUI", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        var gameCanvasComp = gameCanvas.GetComponent<Canvas>();
+    var gameCanvasComp = gameCanvas.GetComponent<Canvas>();
         gameCanvasComp.renderMode = RenderMode.ScreenSpaceOverlay;
         var gameScaler = gameCanvas.GetComponent<CanvasScaler>();
-        gameScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        gameScaler.referenceResolution = new Vector2(1080, 1920);
+    gameScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+    gameScaler.referenceResolution = new Vector2(1920, 1080);
         
-        // Create mobile control buttons
-        CreateMobileControls(gameCanvas.transform, mainCam?.gameObject.GetComponent<CameraController>());
+        // Note: Mobile control buttons removed - using keyboard controls only
         
         // Add Game Manager
         var gameManager = new GameObject("GameManager");
@@ -293,6 +327,24 @@ cam.transform.rotation = Quaternion.identity;
             gameMgr.gameCamera = mainCam;
             gameMgr.cameraController = mainCam.gameObject.GetComponent<CameraController>();
         }
+        
+        // Add Terrain Manager for grid-based building system
+        var terrainMgr = terrainParent.AddComponent<TerrainManager>();
+        terrainMgr.gridSize = 2f;
+        terrainMgr.gridWidth = 50;
+        terrainMgr.gridHeight = 50;
+        terrainMgr.showGrid = true;
+        
+        // Add Map Manager for spawn points and map info
+        var mapMgr = terrainParent.AddComponent<MapManager>();
+        mapMgr.mapName = "Default Map";
+        mapMgr.maxPlayers = 4;
+        mapMgr.mapSize = new Vector2(100, 100);
+        
+        // Add Building Placer system
+        var buildingPlacer = gameManager.AddComponent<BuildingPlacer>();
+        buildingPlacer.terrainManager = terrainMgr;
+        // Note: buildingPrefab should be assigned in the inspector or via code
         
         // Create back to menu button
         var backBtn = MakeButton(gameCanvas.transform, "BackToMenuButton", "Main Menu");
@@ -310,14 +362,21 @@ cam.transform.rotation = Quaternion.identity;
         EditorSceneManager.OpenScene(mmPath);
 
         // Add both to Build Settings
+        var gameModeSelectionPath = "Assets/Scenes/GameModeSelection.unity";
+        CreateGameModeSelectionScene(gameModeSelectionPath);
+        
         var list = new EditorBuildSettingsScene[]
         {
             new EditorBuildSettingsScene(mmPath, true),
+            new EditorBuildSettingsScene(gameModeSelectionPath, true),
             new EditorBuildSettingsScene(gamePath, true)
         };
         EditorBuildSettings.scenes = list;
 
-        EditorUtility.DisplayDialog("Main Menu", "Main Menu + Game scenes created and added to Build Settings.", "OK");
+    // Ensure any existing EventSystems in loaded scenes use the Input System module
+    UpgradeEventSystemsInOpenScenes();
+
+    EditorUtility.DisplayDialog("Main Menu", "Main Menu + Game Mode Selection + Game scenes created, upgraded, and added to Build Settings.", "OK");
 
         // ------- local UI builders -------
         Dropdown MakeLabeledDropdown(Transform parent, string label, Vector2 offset)
@@ -332,7 +391,7 @@ cam.transform.rotation = Quaternion.identity;
             lab.transform.SetParent(root.transform, false);
             var lt = lab.GetComponent<Text>();
             lt.text = label;
-            lt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            lt.font = GetDefaultFont();
             lt.color = Color.white;
             lt.alignment = TextAnchor.MiddleLeft;
             var lr = lab.GetComponent<RectTransform>();
@@ -371,7 +430,7 @@ cam.transform.rotation = Quaternion.identity;
             lab.transform.SetParent(root.transform, false);
             var lt = lab.GetComponent<Text>();
             lt.text = label;
-            lt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            lt.font = GetDefaultFont();
             lt.color = Color.white;
             lt.alignment = TextAnchor.MiddleLeft;
             var lr = lab.GetComponent<RectTransform>();
@@ -418,7 +477,7 @@ cam.transform.rotation = Quaternion.identity;
             lab.transform.SetParent(root.transform, false);
             var lt = lab.GetComponent<Text>();
             lt.text = label;
-            lt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            lt.font = GetDefaultFont();
             lt.color = Color.white;
             lt.alignment = TextAnchor.MiddleLeft;
             var lr = lab.GetComponent<RectTransform>();
@@ -449,81 +508,369 @@ cam.transform.rotation = Quaternion.identity;
             return t;
         }
         
-        void CreateMobileControls(Transform parent, CameraController cameraController)
+        // Create RTS-style terrain with grid visualization
+        void CreateRTSTerrain(Transform parent)
         {
-            if (cameraController == null) return;
+            // Create base terrain plane
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.SetParent(parent);
+            ground.transform.position = Vector3.zero;
+            ground.transform.localScale = new Vector3(50, 1, 50); // 500x500 units
             
-            // Create control panel background
-            var controlPanel = new GameObject("ControlPanel", typeof(Image));
-            controlPanel.transform.SetParent(parent, false);
-            var panelImg = controlPanel.GetComponent<Image>();
-            panelImg.color = new Color(0, 0, 0, 0.5f);
-            var panelRect = controlPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0, 0);
-            panelRect.anchorMax = new Vector2(1, 0.3f);
-            panelRect.offsetMin = Vector2.zero;
-            panelRect.offsetMax = Vector2.zero;
+            // Create simple grass-like material
+            var terrainMaterial = new Material(Shader.Find("Standard"));
+            terrainMaterial.color = new Color(0.3f, 0.5f, 0.2f, 1f); // Grass green
+            terrainMaterial.SetFloat("_Metallic", 0f);
+            terrainMaterial.SetFloat("_Glossiness", 0.1f); // Rough terrain surface
+            ground.GetComponent<Renderer>().material = terrainMaterial;
             
-            // Movement buttons (WASD layout)
-            var upBtn = CreateControlButton(controlPanel.transform, "Up", new Vector2(0, 120), "W");
-            var downBtn = CreateControlButton(controlPanel.transform, "Down", new Vector2(0, -120), "S");
-            var leftBtn = CreateControlButton(controlPanel.transform, "Left", new Vector2(-120, 0), "A");
-            var rightBtn = CreateControlButton(controlPanel.transform, "Right", new Vector2(120, 0), "D");
+            // Create grid lines using LineRenderer components for clear visibility
+            CreateGridLines(parent, 50, 50, 2f); // 50x50 grid with 2 unit spacing
             
-            // Zoom buttons
-            var zoomInBtn = CreateControlButton(controlPanel.transform, "Zoom In", new Vector2(400, 60), "+");
-            var zoomOutBtn = CreateControlButton(controlPanel.transform, "Zoom Out", new Vector2(400, -60), "-");
-            
-            // Wire up button events
-            upBtn.onClick.AddListener(() => cameraController.MoveUp());
-            downBtn.onClick.AddListener(() => cameraController.MoveDown());
-            leftBtn.onClick.AddListener(() => cameraController.MoveLeft());
-            rightBtn.onClick.AddListener(() => cameraController.MoveRight());
-            zoomInBtn.onClick.AddListener(() => cameraController.ZoomIn());
-            zoomOutBtn.onClick.AddListener(() => cameraController.ZoomOut());
-            
-            // Add instructions text
-            var instructions = new GameObject("Instructions", typeof(Text));
-            instructions.transform.SetParent(parent, false);
-            var instText = instructions.GetComponent<Text>();
-            instText.text = "WASD: Move Camera | Mouse Scroll: Zoom | Touch: Pan & Pinch to Zoom";
-            instText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            instText.fontSize = 28;
-            instText.color = Color.white;
-            instText.alignment = TextAnchor.MiddleCenter;
-            var instRect = instructions.GetComponent<RectTransform>();
-            instRect.anchorMin = new Vector2(0, 1);
-            instRect.anchorMax = new Vector2(1, 1);
-            instRect.anchoredPosition = new Vector2(0, -50);
-            instRect.sizeDelta = new Vector2(0, 60);
+            // Add some terrain variation with small hills
+            CreateTerrainFeatures(parent);
         }
         
-        Button CreateControlButton(Transform parent, string name, Vector2 position, string label)
+        // Create visible grid lines for building placement
+        void CreateGridLines(Transform parent, int width, int height, float spacing)
         {
-            var btn = new GameObject(name, typeof(Image), typeof(Button));
-            btn.transform.SetParent(parent, false);
-            var img = btn.GetComponent<Image>();
-            img.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
-            var rect = btn.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(100, 100);
-            rect.anchoredPosition = position;
+            var gridParent = new GameObject("GridLines");
+            gridParent.transform.SetParent(parent);
             
-            var labelGO = new GameObject("Label", typeof(Text));
-            labelGO.transform.SetParent(btn.transform, false);
-            var labelText = labelGO.GetComponent<Text>();
-            labelText.text = label;
-            labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 32;
-            labelText.color = Color.white;
-            labelText.alignment = TextAnchor.MiddleCenter;
-            var labelRect = labelGO.GetComponent<RectTransform>();
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
+            // Create material for grid lines
+            // Use an SRP/URP-friendly default shader for lines
+            Shader lineShader = Shader.Find("Universal Render Pipeline/Simple Lit");
+            if (lineShader == null) lineShader = Shader.Find("Sprites/Default");
+            var lineMaterial = new Material(lineShader);
+            lineMaterial.color = new Color(0.5f, 0.7f, 0.3f, 0.8f); // Subtle green lines
             
-            return btn.GetComponent<Button>();
+            // Vertical lines
+            for (int x = 0; x <= width; x++)
+            {
+                var line = new GameObject($"GridLine_V_{x}");
+                line.transform.SetParent(gridParent.transform);
+                var lr = line.AddComponent<LineRenderer>();
+                lr.material = lineMaterial;
+                lr.startWidth = 0.1f;
+                lr.endWidth = 0.1f;
+                lr.positionCount = 2;
+                
+                float xPos = (x - width/2f) * spacing;
+                lr.SetPosition(0, new Vector3(xPos, 0.1f, -height/2f * spacing));
+                lr.SetPosition(1, new Vector3(xPos, 0.1f, height/2f * spacing));
+            }
+            
+            // Horizontal lines
+            for (int z = 0; z <= height; z++)
+            {
+                var line = new GameObject($"GridLine_H_{z}");
+                line.transform.SetParent(gridParent.transform);
+                var lr = line.AddComponent<LineRenderer>();
+                lr.material = lineMaterial;
+                lr.startWidth = 0.1f;
+                lr.endWidth = 0.1f;
+                lr.positionCount = 2;
+                
+                float zPos = (z - height/2f) * spacing;
+                lr.SetPosition(0, new Vector3(-width/2f * spacing, 0.1f, zPos));
+                lr.SetPosition(1, new Vector3(width/2f * spacing, 0.1f, zPos));
+            }
         }
+        
+        // Add some terrain features for visual interest
+        void CreateTerrainFeatures(Transform parent)
+        {
+            var featuresParent = new GameObject("TerrainFeatures");
+            featuresParent.transform.SetParent(parent);
+            
+            // Create a few small hills/rocks
+            for (int i = 0; i < 5; i++)
+            {
+                var hill = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                hill.name = $"Hill_{i}";
+                hill.transform.SetParent(featuresParent.transform);
+                hill.transform.position = new Vector3(
+                    UnityEngine.Random.Range(-40f, 40f),
+                    0.5f,
+                    UnityEngine.Random.Range(-40f, 40f)
+                );
+                hill.transform.localScale = new Vector3(
+                    UnityEngine.Random.Range(2f, 5f),
+                    UnityEngine.Random.Range(0.5f, 1.5f),
+                    UnityEngine.Random.Range(2f, 5f)
+                );
+                
+                // Hill material
+                var hillMaterial = new Material(Shader.Find("Standard"));
+                hillMaterial.color = new Color(0.4f, 0.3f, 0.2f, 1f); // Brown/dirt color
+                hill.GetComponent<Renderer>().material = hillMaterial;
+            }
+            
+            // Create some tree placeholders
+            for (int i = 0; i < 8; i++)
+            {
+                var tree = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                tree.name = $"Tree_{i}";
+                tree.transform.SetParent(featuresParent.transform);
+                tree.transform.position = new Vector3(
+                    UnityEngine.Random.Range(-30f, 30f),
+                    2f,
+                    UnityEngine.Random.Range(-30f, 30f)
+                );
+                tree.transform.localScale = new Vector3(0.5f, 4f, 0.5f);
+                
+                // Tree material
+                var treeMaterial = new Material(Shader.Find("Standard"));
+                treeMaterial.color = new Color(0.2f, 0.4f, 0.1f, 1f); // Dark green
+                tree.GetComponent<Renderer>().material = treeMaterial;
+            }
+        }
+    }
+    
+    static void CreateGameModeSelectionScene(string scenePath)
+    {
+        // Create Game Mode Selection scene
+        var gameModeScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        
+    // Create EventSystem for UI (Input System)
+    var es = new GameObject("EventSystem");
+    es.AddComponent<UnityEngine.EventSystems.EventSystem>();
+    es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+        
+        // Create Canvas
+        var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvasComp = canvasGO.GetComponent<Canvas>();
+        canvasComp.renderMode = RenderMode.ScreenSpaceOverlay;
+        var scaler = canvasGO.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920);
+        
+        // Background
+        var bg = new GameObject("Background", typeof(Image));
+        bg.transform.SetParent(canvasGO.transform, false);
+        var bgImage = bg.GetComponent<Image>();
+        bgImage.color = new Color(0.1f, 0.1f, 0.2f, 1f);
+        var bgRect = bg.GetComponent<RectTransform>();
+        bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero; bgRect.offsetMax = Vector2.zero;
+        
+        // Title
+        var title = new GameObject("Title", typeof(Text));
+        title.transform.SetParent(canvasGO.transform, false);
+        var titleText = title.GetComponent<Text>();
+        titleText.text = "SELECT GAME MODE";
+    titleText.font = GetDefaultFont();
+        titleText.fontSize = 60;
+        titleText.color = Color.white;
+        titleText.alignment = TextAnchor.MiddleCenter;
+        var titleRect = title.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.8f);
+        titleRect.anchorMax = new Vector2(1, 1);
+        titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
+        
+        // Create main buttons
+        var buttonGroup = new GameObject("ButtonGroup", typeof(RectTransform));
+        buttonGroup.transform.SetParent(canvasGO.transform, false);
+        var groupRect = buttonGroup.GetComponent<RectTransform>();
+        groupRect.anchorMin = new Vector2(0.2f, 0.3f);
+        groupRect.anchorMax = new Vector2(0.8f, 0.7f);
+        groupRect.offsetMin = Vector2.zero; groupRect.offsetMax = Vector2.zero;
+        
+        // Campaign button
+        var campaignBtn = MakeButton(buttonGroup.transform, "CampaignButton", "CAMPAIGN");
+        SetButtonPosition(campaignBtn, new Vector2(0, 0.75f), new Vector2(400, 80));
+        
+        // Skirmish button
+        var skirmishBtn = MakeButton(buttonGroup.transform, "SkirmishButton", "SKIRMISH");
+        SetButtonPosition(skirmishBtn, new Vector2(0, 0.5f), new Vector2(400, 80));
+        
+        // Multiplayer button
+        var multiplayerBtn = MakeButton(buttonGroup.transform, "MultiplayerButton", "MULTIPLAYER");
+        SetButtonPosition(multiplayerBtn, new Vector2(0, 0.25f), new Vector2(400, 80));
+        
+        // Back button
+        var backBtn = MakeButton(buttonGroup.transform, "BackButton", "BACK TO MAIN MENU");
+        SetButtonPosition(backBtn, new Vector2(0, 0f), new Vector2(400, 80));
+        
+        // Create panels for each mode (initially hidden)
+        var campaignPanel = CreatePanel(canvasGO.transform, "CampaignPanel", false);
+        var skirmishPanel = CreatePanel(canvasGO.transform, "SkirmishPanel", false);
+        var multiplayerPanel = CreatePanel(canvasGO.transform, "MultiplayerPanel", false);
+        
+        // Add Campaign UI to panel
+        CreateCampaignUI(campaignPanel.transform);
+        
+        // Add Skirmish UI to panel
+        CreateSkirmishUI(skirmishPanel.transform);
+        
+        // Add GameModeMenu component
+        var gameModeMenu = canvasGO.AddComponent<GameModeMenu>();
+        gameModeMenu.campaignButton = campaignBtn;
+        gameModeMenu.skirmishButton = skirmishBtn;
+        gameModeMenu.multiplayerButton = multiplayerBtn;
+        gameModeMenu.backToMainButton = backBtn;
+        gameModeMenu.campaignPanel = campaignPanel;
+        gameModeMenu.skirmishPanel = skirmishPanel;
+        gameModeMenu.multiplayerPanel = multiplayerPanel;
+        
+        // Save scene
+        EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), scenePath);
+    }
+    
+    static GameObject CreatePanel(Transform parent, string name, bool active)
+    {
+        var panel = new GameObject(name, typeof(Image));
+        panel.transform.SetParent(parent, false);
+        var image = panel.GetComponent<Image>();
+        image.color = new Color(0, 0, 0, 0.8f);
+        var rect = panel.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero; rect.offsetMax = Vector2.zero;
+        panel.SetActive(active);
+        return panel;
+    }
+    
+    static void SetButtonPosition(Button button, Vector2 anchorPos, Vector2 size)
+    {
+        var rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = anchorPos;
+        rect.anchorMax = anchorPos;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = size;
+    }
+    
+    static void CreateCampaignUI(Transform parent)
+    {
+        var title = new GameObject("CampaignTitle", typeof(Text));
+        title.transform.SetParent(parent, false);
+        var titleText = title.GetComponent<Text>();
+        titleText.text = "CAMPAIGN MODE";
+    titleText.font = GetDefaultFont();
+        titleText.fontSize = 48;
+        titleText.color = Color.white;
+        titleText.alignment = TextAnchor.MiddleCenter;
+        var titleRect = title.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.7f);
+        titleRect.anchorMax = new Vector2(1, 0.9f);
+        titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
+        
+        var newBtn = MakeButton(parent, "NewCampaignButton", "NEW CAMPAIGN");
+        SetButtonPosition(newBtn, new Vector2(0.5f, 0.6f), new Vector2(300, 60));
+        
+        var loadBtn = MakeButton(parent, "LoadCampaignButton", "LOAD CAMPAIGN");
+        SetButtonPosition(loadBtn, new Vector2(0.5f, 0.5f), new Vector2(300, 60));
+        
+        var backBtn = MakeButton(parent, "CampaignBackButton", "BACK");
+        SetButtonPosition(backBtn, new Vector2(0.5f, 0.3f), new Vector2(200, 50));
+        
+        // Wire up buttons (this would be done in GameModeMenu)
+        var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
+        if (gameModeMenu != null)
+        {
+            gameModeMenu.newCampaignButton = newBtn;
+            gameModeMenu.loadCampaignButton = loadBtn;
+        }
+    }
+    
+    static void CreateSkirmishUI(Transform parent)
+    {
+        var title = new GameObject("SkirmishTitle", typeof(Text));
+        title.transform.SetParent(parent, false);
+        var titleText = title.GetComponent<Text>();
+        titleText.text = "SKIRMISH SETUP";
+    titleText.font = GetDefaultFont();
+        titleText.fontSize = 48;
+        titleText.color = Color.white;
+        titleText.alignment = TextAnchor.MiddleCenter;
+        var titleRect = title.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 0.85f);
+        titleRect.anchorMax = new Vector2(1, 0.95f);
+        titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
+        
+        // Create a scroll view for the skirmish setup (simplified for now)
+        var scrollArea = new GameObject("ScrollArea", typeof(RectTransform));
+        scrollArea.transform.SetParent(parent, false);
+        var scrollRect = scrollArea.GetComponent<RectTransform>();
+        scrollRect.anchorMin = new Vector2(0.1f, 0.1f);
+        scrollRect.anchorMax = new Vector2(0.9f, 0.8f);
+        scrollRect.offsetMin = Vector2.zero; scrollRect.offsetMax = Vector2.zero;
+        
+        // Coming soon text (actual skirmish setup would be more complex)
+        var comingSoon = new GameObject("ComingSoonText", typeof(Text));
+        comingSoon.transform.SetParent(scrollArea.transform, false);
+        var csText = comingSoon.GetComponent<Text>();
+        csText.text = "SKIRMISH SETUP COMING SOON!\\n\\nThis will include:\\n- Map Selection\\n- Player Configuration\\n- AI Difficulty Settings\\n- Resource Settings\\n- Victory Conditions";
+    csText.font = GetDefaultFont();
+        csText.fontSize = 32;
+        csText.color = Color.white;
+        csText.alignment = TextAnchor.MiddleCenter;
+        var csRect = comingSoon.GetComponent<RectTransform>();
+        csRect.anchorMin = Vector2.zero; csRect.anchorMax = Vector2.one;
+        csRect.offsetMin = Vector2.zero; csRect.offsetMax = Vector2.zero;
+        
+        var backBtn = MakeButton(parent, "SkirmishBackButton", "BACK");
+        SetButtonPosition(backBtn, new Vector2(0.5f, 0.05f), new Vector2(200, 50));
+    }
+    
+    // Helper methods for UI creation
+    static Button MakeButton(Transform parent, string name, string label)
+    {
+        var go = new GameObject(name, typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var img = go.GetComponent<Image>();
+        img.color = new Color(0.15f, 0.22f, 0.36f, 1f);
+        var rect = go.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(600, 140);
+
+        var textGO = new GameObject("Label", typeof(Text));
+        textGO.transform.SetParent(go.transform, false);
+        var t = textGO.GetComponent<Text>();
+        t.text = label;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.font = GetDefaultFont();
+        t.color = new Color(1f, 1f, 1f, 0.97f);
+        t.fontSize = 42;
+        var tr = textGO.GetComponent<RectTransform>();
+        tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+        tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
+
+        return go.GetComponent<Button>();
+    }
+
+    // Returns a reliable default font for editor-time UI building in Unity 6+
+    static Font GetDefaultFont()
+    {
+        // Unity 6: Try multiple paths for built-in fonts
+        Font font = null;
+        
+        // Method 1: Try AssetDatabase.GetBuiltinExtraResource with LegacyRuntime (Unity 6 preferred)
+        try { font = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf"); } catch { }
+        if (font != null) return font;
+        
+        // Method 2: Try EditorGUIUtility.Load
+        try { font = EditorGUIUtility.Load("LegacyRuntime.ttf") as Font; } catch { }
+        if (font != null) return font;
+        
+        // Method 3: Try AssetDatabase with exception handling
+        try { font = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf"); } catch { }
+        if (font != null) return font;
+        
+        // Method 4: Create dynamic font from OS (guaranteed to work)
+        try 
+        { 
+            font = Font.CreateDynamicFontFromOSFont("Arial", 16);
+            if (font != null && font.name != "Arial") // Check if it actually loaded
+                return font;
+        } 
+        catch { }
+        
+        // Method 5: Last resort - use Unity's default GUI font
+        try { return GUI.skin.font; } catch { }
+        
+        // Absolutely final fallback
+        return Font.CreateDynamicFontFromOSFont("Arial", 16);
     }
 }
 #endif

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraController : MonoBehaviour
 {
@@ -40,17 +41,21 @@ public class CameraController : MonoBehaviour
 
     void HandleKeyboardInput()
     {
-        // WASD movement (no scrolling)
+        // WASD movement using new Input System
         Vector3 movement = Vector3.zero;
         
-        if (Input.GetKey(KeyCode.W))
-            movement += Vector3.forward;
-        if (Input.GetKey(KeyCode.S))
-            movement += Vector3.back;
-        if (Input.GetKey(KeyCode.A))
-            movement += Vector3.left;
-        if (Input.GetKey(KeyCode.D))
-            movement += Vector3.right;
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
+                movement += Vector3.forward;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
+                movement += Vector3.back;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+                movement += Vector3.left;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+                movement += Vector3.right;
+        }
         
         // Apply movement
         if (movement != Vector3.zero)
@@ -62,64 +67,85 @@ public class CameraController : MonoBehaviour
 
     void HandleMouseInput()
     {
+        Mouse mouse = Mouse.current;
+        if (mouse == null) return;
+        
         // Mouse scroll for zoom
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0)
+        Vector2 scroll = mouse.scroll.ReadValue();
+        if (scroll.y != 0)
         {
-            ZoomCamera(-scroll * zoomSpeed);
+            ZoomCamera(-scroll.y * 0.001f * zoomSpeed); // Adjusted for new input system scaling
         }
         
         // Mouse drag for panning (middle mouse or right mouse)
-        if (Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2)) // Right or middle mouse
+        if (mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)
         {
-            lastTouchPosition = Input.mousePosition;
+            lastTouchPosition = mouse.position.ReadValue();
             isDragging = true;
         }
         
-        if (Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2))
+        if (mouse.rightButton.wasReleasedThisFrame || mouse.middleButton.wasReleasedThisFrame)
         {
             isDragging = false;
         }
         
-        if (isDragging && (Input.GetMouseButton(1) || Input.GetMouseButton(2)))
+        if (isDragging && (mouse.rightButton.isPressed || mouse.middleButton.isPressed))
         {
-            Vector3 deltaPosition = Input.mousePosition - lastTouchPosition;
+            Vector3 currentMousePos = mouse.position.ReadValue();
+            Vector3 deltaPosition = currentMousePos - lastTouchPosition;
             PanCamera(deltaPosition);
-            lastTouchPosition = Input.mousePosition;
+            lastTouchPosition = currentMousePos;
         }
     }
 
     void HandleTouchInput()
     {
-        if (Input.touchCount == 1)
+        Touchscreen touchscreen = Touchscreen.current;
+        if (touchscreen == null) return;
+        
+        var touches = touchscreen.touches;
+        int activeTouchCount = 0;
+        
+        // Count active touches
+        for (int i = 0; i < touches.Count; i++)
+        {
+            if (touches[i].isInProgress)
+                activeTouchCount++;
+        }
+        
+        if (activeTouchCount == 1)
         {
             // Single touch for panning
-            Touch touch = Input.GetTouch(0);
+            var touch = touches[0];
             
-            if (touch.phase == TouchPhase.Began)
+            if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
             {
-                lastTouchPosition = touch.position;
+                lastTouchPosition = touch.position.ReadValue();
                 isDragging = true;
                 isPinching = false;
             }
-            else if (touch.phase == TouchPhase.Moved && isDragging && !isPinching)
+            else if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Moved && isDragging && !isPinching)
             {
-                Vector3 deltaPosition = (Vector3)touch.position - lastTouchPosition;
+                Vector3 currentPos = touch.position.ReadValue();
+                Vector3 deltaPosition = currentPos - lastTouchPosition;
                 PanCamera(deltaPosition * touchSensitivity);
-                lastTouchPosition = touch.position;
+                lastTouchPosition = currentPos;
             }
-            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            else if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Ended || 
+                     touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
             {
                 isDragging = false;
             }
         }
-        else if (Input.touchCount == 2)
+        else if (activeTouchCount == 2)
         {
             // Two finger pinch for zoom
-            Touch touch1 = Input.GetTouch(0);
-            Touch touch2 = Input.GetTouch(1);
+            var touch1 = touches[0];
+            var touch2 = touches[1];
             
-            float currentPinchDistance = Vector2.Distance(touch1.position, touch2.position);
+            Vector2 touch1Pos = touch1.position.ReadValue();
+            Vector2 touch2Pos = touch2.position.ReadValue();
+            float currentPinchDistance = Vector2.Distance(touch1Pos, touch2Pos);
             
             if (!isPinching)
             {
@@ -168,12 +194,4 @@ public class CameraController : MonoBehaviour
             transform.position = pos;
         }
     }
-    
-    // Public methods for UI buttons (mobile-friendly)
-    public void MoveUp() { transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime, Space.World); }
-    public void MoveDown() { transform.Translate(Vector3.back * moveSpeed * Time.deltaTime, Space.World); }
-    public void MoveLeft() { transform.Translate(Vector3.left * moveSpeed * Time.deltaTime, Space.World); }
-    public void MoveRight() { transform.Translate(Vector3.right * moveSpeed * Time.deltaTime, Space.World); }
-    public void ZoomIn() { ZoomCamera(-1f); }
-    public void ZoomOut() { ZoomCamera(1f); }
 }

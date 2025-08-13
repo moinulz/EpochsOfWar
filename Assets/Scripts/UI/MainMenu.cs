@@ -25,8 +25,9 @@ public class MainMenu : MonoBehaviour
 
     void OnPlay()
     {
-        if (sceneLoader) sceneLoader.LoadSceneAsync(gameSceneName);
-        else UnityEngine.SceneManagement.SceneManager.LoadScene(gameSceneName);
+        // Load the Game Mode selection scene instead of going directly to game
+        if (sceneLoader) sceneLoader.LoadSceneAsync("GameModeSelection");
+        else UnityEngine.SceneManagement.SceneManager.LoadScene("GameModeSelection");
     }
 
     void ToggleSettings()
