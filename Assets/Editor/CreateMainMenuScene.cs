@@ -66,23 +66,24 @@ cam.transform.rotation = Quaternion.identity;
     scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
     scaler.referenceResolution = new Vector2(1920, 1080);
 
-        // Background panel
+        // Background panel with gradient
         var bg = new GameObject("Background", typeof(Image));
         bg.transform.SetParent(canvasGO.transform, false);
         var bgRect = bg.GetComponent<RectTransform>();
         bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
         bgRect.offsetMin = Vector2.zero;  bgRect.offsetMax = Vector2.zero;
-        bg.GetComponent<Image>().color = new Color(0.05f, 0.08f, 0.12f, 1f);
+        bg.GetComponent<Image>().color = new Color(0.02f, 0.05f, 0.08f, 1f); // Deep dark blue
 
-        // Title
-    var title = new GameObject("Title", typeof(Text));
+        // Title with modern styling
+        var title = new GameObject("Title", typeof(Text));
         title.transform.SetParent(canvasGO.transform, false);
         var titleTxt = title.GetComponent<Text>();
-        titleTxt.text = "Epochs of War";
+        titleTxt.text = "EPOCHS OF WAR";
         titleTxt.alignment = TextAnchor.MiddleCenter;
-    titleTxt.font = GetDefaultFont();
-        titleTxt.fontSize = 72;
-        titleTxt.color = Color.white;
+        titleTxt.font = GetDefaultFont();
+        titleTxt.fontSize = 84;
+        titleTxt.fontStyle = FontStyle.Bold;
+        titleTxt.color = new Color(0.9f, 0.95f, 1f, 1f); // Slightly blue-tinted white
         var titleRect = title.GetComponent<RectTransform>();
         titleRect.anchorMin = new Vector2(0.5f, 1f);
         titleRect.anchorMax = new Vector2(0.5f, 1f);
@@ -96,10 +97,19 @@ cam.transform.rotation = Quaternion.identity;
             var go = new GameObject(name, typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
             var img = go.GetComponent<Image>();
-            // Higher contrast background for readability
-            img.color = new Color(0.15f, 0.22f, 0.36f, 1f);
+            // Modern button styling with subtle gradient
+            img.color = new Color(0.1f, 0.15f, 0.25f, 0.9f);
             var rect = go.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(600, 140);
+
+            // Add subtle border effect
+            var border = new GameObject("Border", typeof(Image));
+            border.transform.SetParent(go.transform, false);
+            var borderImg = border.GetComponent<Image>();
+            borderImg.color = new Color(0.3f, 0.4f, 0.6f, 0.4f);
+            var borderRect = border.GetComponent<RectTransform>();
+            borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+            borderRect.offsetMin = new Vector2(2, 2); borderRect.offsetMax = new Vector2(-2, -2);
 
             var textGO = new GameObject("Label", typeof(Text));
             textGO.transform.SetParent(go.transform, false);
@@ -107,8 +117,9 @@ cam.transform.rotation = Quaternion.identity;
             t.text = label;
             t.alignment = TextAnchor.MiddleCenter;
             t.font = GetDefaultFont();
-            t.color = new Color(1f, 1f, 1f, 0.97f);
-            t.fontSize = 42;
+            t.color = new Color(0.9f, 0.9f, 1f, 1f);
+            t.fontSize = 48;
+            t.fontStyle = FontStyle.Bold;
             var tr = textGO.GetComponent<RectTransform>();
             tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
             tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
@@ -646,11 +657,11 @@ cam.transform.rotation = Quaternion.identity;
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080, 1920);
         
-        // Background
+        // Background with modern dark theme
         var bg = new GameObject("Background", typeof(Image));
         bg.transform.SetParent(canvasGO.transform, false);
         var bgImage = bg.GetComponent<Image>();
-        bgImage.color = new Color(0.1f, 0.1f, 0.2f, 1f);
+        bgImage.color = new Color(0.02f, 0.05f, 0.08f, 1f);
         var bgRect = bg.GetComponent<RectTransform>();
         bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
         bgRect.offsetMin = Vector2.zero; bgRect.offsetMax = Vector2.zero;
@@ -765,6 +776,12 @@ cam.transform.rotation = Quaternion.identity;
         var backBtn = MakeButton(parent, "CampaignBackButton", "BACK");
         SetButtonPosition(backBtn, new Vector2(0.5f, 0.3f), new Vector2(200, 50));
         
+        // Wire up back button to return to main game mode selection
+        backBtn.onClick.AddListener(() => {
+            var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
+            if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
+        });
+        
         // Wire up buttons (this would be done in GameModeMenu)
         var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
         if (gameModeMenu != null)
@@ -776,45 +793,245 @@ cam.transform.rotation = Quaternion.identity;
     
     static void CreateSkirmishUI(Transform parent)
     {
+        // Title
         var title = new GameObject("SkirmishTitle", typeof(Text));
         title.transform.SetParent(parent, false);
         var titleText = title.GetComponent<Text>();
         titleText.text = "SKIRMISH SETUP";
-    titleText.font = GetDefaultFont();
+        titleText.font = GetDefaultFont();
         titleText.fontSize = 48;
-        titleText.color = Color.white;
+        titleText.color = new Color(0.9f, 0.9f, 1f, 1f);
         titleText.alignment = TextAnchor.MiddleCenter;
         var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0, 0.85f);
-        titleRect.anchorMax = new Vector2(1, 0.95f);
+        titleRect.anchorMin = new Vector2(0, 0.9f);
+        titleRect.anchorMax = new Vector2(1, 0.98f);
         titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
         
-        // Create a scroll view for the skirmish setup (simplified for now)
-        var scrollArea = new GameObject("ScrollArea", typeof(RectTransform));
+        // Main content area with scroll
+        var scrollArea = new GameObject("ScrollArea", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
         scrollArea.transform.SetParent(parent, false);
         var scrollRect = scrollArea.GetComponent<RectTransform>();
-        scrollRect.anchorMin = new Vector2(0.1f, 0.1f);
-        scrollRect.anchorMax = new Vector2(0.9f, 0.8f);
+        scrollRect.anchorMin = new Vector2(0.05f, 0.12f);
+        scrollRect.anchorMax = new Vector2(0.95f, 0.85f);
         scrollRect.offsetMin = Vector2.zero; scrollRect.offsetMax = Vector2.zero;
         
-        // Coming soon text (actual skirmish setup would be more complex)
-        var comingSoon = new GameObject("ComingSoonText", typeof(Text));
-        comingSoon.transform.SetParent(scrollArea.transform, false);
-        var csText = comingSoon.GetComponent<Text>();
-        csText.text = "SKIRMISH SETUP COMING SOON!\\n\\nThis will include:\\n- Map Selection\\n- Player Configuration\\n- AI Difficulty Settings\\n- Resource Settings\\n- Victory Conditions";
-    csText.font = GetDefaultFont();
-        csText.fontSize = 32;
-        csText.color = Color.white;
-        csText.alignment = TextAnchor.MiddleCenter;
-        var csRect = comingSoon.GetComponent<RectTransform>();
-        csRect.anchorMin = Vector2.zero; csRect.anchorMax = Vector2.one;
-        csRect.offsetMin = Vector2.zero; csRect.offsetMax = Vector2.zero;
+        var scrollImg = scrollArea.GetComponent<Image>();
+        scrollImg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
         
-        var backBtn = MakeButton(parent, "SkirmishBackButton", "BACK");
-        SetButtonPosition(backBtn, new Vector2(0.5f, 0.05f), new Vector2(200, 50));
+        var scroll = scrollArea.GetComponent<ScrollRect>();
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        
+        // Content container
+        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(scrollArea.transform, false);
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0, 1);
+        contentRect.anchorMax = new Vector2(1, 1);
+        contentRect.pivot = new Vector2(0.5f, 1);
+        contentRect.anchoredPosition = Vector2.zero;
+        
+        var vlg = content.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = 20f;
+        vlg.padding = new RectOffset(30, 30, 20, 20);
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+        
+        var fitter = content.GetComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        
+        scroll.content = contentRect;
+        
+        // Map Selection Section
+        CreateSection(content.transform, "MAP SELECTION", (sectionContent) => {
+            var mapDropdown = CreateStyledDropdown(sectionContent, "Map", new[] { "Default Map (4 Players)", "Small Map (2 Players)", "Large Map (6 Players)" });
+            var mapInfo = CreateInfoText(sectionContent, "A balanced map with strategic choke points and resource distribution.");
+        });
+        
+        // Player Setup Section
+        CreateSection(content.transform, "PLAYERS", (sectionContent) => {
+            for (int i = 0; i < 4; i++)
+            {
+                CreatePlayerRow(sectionContent, i);
+            }
+        });
+        
+        // Game Options Section
+        CreateSection(content.transform, "GAME OPTIONS", (sectionContent) => {
+            var victoryDropdown = CreateStyledDropdown(sectionContent, "Victory Condition", new[] { "Destroy All Capitals", "Eliminate All Units", "Last Standing", "Custom" });
+            var resourcesToggle = CreateStyledToggle(sectionContent, "Custom Starting Resources", false);
+        });
+        
+        // Action buttons at bottom
+        var buttonArea = new GameObject("ButtonArea", typeof(RectTransform));
+        buttonArea.transform.SetParent(parent, false);
+        var buttonRect = buttonArea.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.1f, 0.02f);
+        buttonRect.anchorMax = new Vector2(0.9f, 0.1f);
+        buttonRect.offsetMin = Vector2.zero; buttonRect.offsetMax = Vector2.zero;
+        
+        var startBtn = CreateModernButton(buttonArea.transform, "StartGameButton", "START GAME", new Color(0.2f, 0.6f, 0.3f, 1f));
+        var startBtnRect = startBtn.GetComponent<RectTransform>();
+        startBtnRect.anchorMin = new Vector2(0.55f, 0.2f);
+        startBtnRect.anchorMax = new Vector2(0.95f, 0.8f);
+        startBtnRect.offsetMin = Vector2.zero; startBtnRect.offsetMax = Vector2.zero;
+        
+        var backBtn = CreateModernButton(buttonArea.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.4f, 0.4f, 1f));
+        var backBtnRect = backBtn.GetComponent<RectTransform>();
+        backBtnRect.anchorMin = new Vector2(0.05f, 0.2f);
+        backBtnRect.anchorMax = new Vector2(0.35f, 0.8f);
+        backBtnRect.offsetMin = Vector2.zero; backBtnRect.offsetMax = Vector2.zero;
+        
+        // Wire up back button
+        backBtn.onClick.AddListener(() => {
+            var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
+            if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
+        });
+        
+        // Add SkirmishSetup component
+        var skirmishSetup = scrollArea.AddComponent<SkirmishSetup>();
+        skirmishSetup.startGameButton = startBtn;
+        skirmishSetup.backButton = backBtn;
     }
     
-    // Helper methods for UI creation
+    static void CreateSection(Transform parent, string title, System.Action<Transform> createContent)
+    {
+        var section = new GameObject($"Section_{title}", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(Image));
+        section.transform.SetParent(parent, false);
+        
+        var sectionImg = section.GetComponent<Image>();
+        sectionImg.color = new Color(0.12f, 0.16f, 0.22f, 0.8f);
+        
+        var sectionVlg = section.GetComponent<VerticalLayoutGroup>();
+        sectionVlg.spacing = 10f;
+        sectionVlg.padding = new RectOffset(20, 20, 15, 15);
+        sectionVlg.childControlWidth = true;
+        sectionVlg.childControlHeight = false;
+        sectionVlg.childForceExpandWidth = true;
+        
+        var sectionFitter = section.GetComponent<ContentSizeFitter>();
+        sectionFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        
+        // Section title
+        var titleObj = new GameObject("Title", typeof(Text));
+        titleObj.transform.SetParent(section.transform, false);
+        var titleText = titleObj.GetComponent<Text>();
+        titleText.text = title;
+        titleText.font = GetDefaultFont();
+        titleText.fontSize = 28;
+        titleText.color = new Color(0.8f, 0.9f, 1f, 1f);
+        titleText.fontStyle = FontStyle.Bold;
+        titleText.alignment = TextAnchor.MiddleLeft;
+        
+        var titleLayout = titleObj.AddComponent<LayoutElement>();
+        titleLayout.preferredHeight = 35;
+        
+        createContent(section.transform);
+    }
+    
+    static void CreatePlayerRow(Transform parent, int playerIndex)
+    {
+        var row = new GameObject($"Player_{playerIndex}", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        row.transform.SetParent(parent, false);
+        
+        var rowImg = row.GetComponent<Image>();
+        rowImg.color = new Color(0.08f, 0.12f, 0.16f, 0.6f);
+        
+        var hlg = row.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 15f;
+        hlg.padding = new RectOffset(15, 15, 10, 10);
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+        
+        var rowLayout = row.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 50;
+        
+        // Player label
+        var label = CreateLabel(row.transform, $"Player {playerIndex + 1}", 120);
+        
+        // Player type dropdown
+        var typeDropdown = CreateCompactDropdown(row.transform, new[] { "Human", "AI Easy", "AI Normal", "AI Hard", "Disabled" }, 120);
+        
+        // Team dropdown
+        var teamDropdown = CreateCompactDropdown(row.transform, new[] { "Team 1", "Team 2", "Team 3", "Team 4" }, 100);
+        
+        // Color indicator
+        var colorBtn = CreateColorButton(row.transform, GetPlayerColor(playerIndex));
+        
+        // Starting resources (compact)
+        CreateResourceMini(row.transform, "Gold", "1000");
+    }
+    
+    static Color GetPlayerColor(int index)
+    {
+        Color[] colors = {
+            new Color(0.2f, 0.6f, 1f, 1f),    // Blue
+            new Color(1f, 0.3f, 0.3f, 1f),    // Red  
+            new Color(0.3f, 0.8f, 0.3f, 1f),  // Green
+            new Color(1f, 0.8f, 0.2f, 1f),    // Yellow
+            new Color(0.8f, 0.3f, 0.8f, 1f),  // Purple
+            new Color(1f, 0.5f, 0.1f, 1f),    // Orange
+        };
+        return colors[index % colors.Length];
+    }
+    
+    static GameObject CreateLabel(Transform parent, string text, float width)
+    {
+        var label = new GameObject("Label", typeof(Text));
+        label.transform.SetParent(parent, false);
+        var labelText = label.GetComponent<Text>();
+        labelText.text = text;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 18;
+        labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        var layout = label.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        
+        return label;
+    }
+    
+    static Button CreateColorButton(Transform parent, Color color)
+    {
+        var btn = new GameObject("ColorButton", typeof(Image), typeof(Button));
+        btn.transform.SetParent(parent, false);
+        var img = btn.GetComponent<Image>();
+        img.color = color;
+        
+        var layout = btn.AddComponent<LayoutElement>();
+        layout.preferredWidth = 40;
+        
+        return btn.GetComponent<Button>();
+    }
+    
+    static void CreateResourceMini(Transform parent, string resourceName, string amount)
+    {
+        var container = new GameObject($"{resourceName}Container", typeof(RectTransform));
+        container.transform.SetParent(parent, false);
+        
+        var layout = container.AddComponent<LayoutElement>();
+        layout.preferredWidth = 80;
+        
+        var text = new GameObject("Text", typeof(Text));
+        text.transform.SetParent(container.transform, false);
+        var textComp = text.GetComponent<Text>();
+        textComp.text = $"{resourceName}\\n{amount}";
+        textComp.font = GetDefaultFont();
+        textComp.fontSize = 12;
+        textComp.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+        textComp.alignment = TextAnchor.MiddleCenter;
+        
+        var textRect = text.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+    }    // Helper methods for UI creation
     static Button MakeButton(Transform parent, string name, string label)
     {
         var go = new GameObject(name, typeof(Image), typeof(Button));
@@ -838,38 +1055,176 @@ cam.transform.rotation = Quaternion.identity;
 
         return go.GetComponent<Button>();
     }
+    
+    static Button CreateModernButton(Transform parent, string name, string label, Color color)
+    {
+        var go = new GameObject(name, typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var img = go.GetComponent<Image>();
+        img.color = color;
+        
+        // Add subtle gradient effect
+        var gradientObj = new GameObject("Gradient", typeof(Image));
+        gradientObj.transform.SetParent(go.transform, false);
+        var gradientImg = gradientObj.GetComponent<Image>();
+        gradientImg.color = new Color(1f, 1f, 1f, 0.1f);
+        var gradientRect = gradientObj.GetComponent<RectTransform>();
+        gradientRect.anchorMin = Vector2.zero;
+        gradientRect.anchorMax = new Vector2(1, 0.5f);
+        gradientRect.offsetMin = Vector2.zero;
+        gradientRect.offsetMax = Vector2.zero;
+
+        var textGO = new GameObject("Label", typeof(Text));
+        textGO.transform.SetParent(go.transform, false);
+        var t = textGO.GetComponent<Text>();
+        t.text = label;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.font = GetDefaultFont();
+        t.color = Color.white;
+        t.fontSize = 24;
+        t.fontStyle = FontStyle.Bold;
+        var tr = textGO.GetComponent<RectTransform>();
+        tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+        tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
+
+        return go.GetComponent<Button>();
+    }
+    
+    static Dropdown CreateStyledDropdown(Transform parent, string label, string[] options)
+    {
+        var container = new GameObject($"{label}Container", typeof(RectTransform));
+        container.transform.SetParent(parent, false);
+        
+        var layout = container.AddComponent<LayoutElement>();
+        layout.preferredHeight = 60;
+        
+        // Label
+        var labelObj = new GameObject("Label", typeof(Text));
+        labelObj.transform.SetParent(container.transform, false);
+        var labelText = labelObj.GetComponent<Text>();
+        labelText.text = label;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 18;
+        labelText.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        var labelRect = labelObj.GetComponent<RectTransform>();
+        labelRect.anchorMin = new Vector2(0, 0.6f);
+        labelRect.anchorMax = new Vector2(1, 1f);
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+        
+        // Dropdown
+        var dd = new GameObject("Dropdown", typeof(Image), typeof(Dropdown));
+        dd.transform.SetParent(container.transform, false);
+        var dropdown = dd.GetComponent<Dropdown>();
+        var ddImg = dd.GetComponent<Image>();
+        ddImg.color = new Color(0.15f, 0.2f, 0.25f, 1f);
+        
+        var ddRect = dd.GetComponent<RectTransform>();
+        ddRect.anchorMin = new Vector2(0, 0f);
+        ddRect.anchorMax = new Vector2(1, 0.55f);
+        ddRect.offsetMin = Vector2.zero;
+        ddRect.offsetMax = Vector2.zero;
+        
+        dropdown.options.Clear();
+        foreach (var option in options)
+        {
+            dropdown.options.Add(new Dropdown.OptionData(option));
+        }
+        
+        return dropdown;
+    }
+    
+    static Dropdown CreateCompactDropdown(Transform parent, string[] options, float width)
+    {
+        var dd = new GameObject("CompactDropdown", typeof(Image), typeof(Dropdown));
+        dd.transform.SetParent(parent, false);
+        var dropdown = dd.GetComponent<Dropdown>();
+        var ddImg = dd.GetComponent<Image>();
+        ddImg.color = new Color(0.15f, 0.2f, 0.25f, 1f);
+        
+        var layout = dd.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        
+        dropdown.options.Clear();
+        foreach (var option in options)
+        {
+            dropdown.options.Add(new Dropdown.OptionData(option));
+        }
+        
+        return dropdown;
+    }
+    
+    static Toggle CreateStyledToggle(Transform parent, string label, bool defaultValue)
+    {
+        var container = new GameObject($"{label}Container", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        container.transform.SetParent(parent, false);
+        
+        var hlg = container.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 15f;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        
+        var layout = container.AddComponent<LayoutElement>();
+        layout.preferredHeight = 40;
+        
+        // Toggle
+        var toggleObj = new GameObject("Toggle", typeof(Toggle), typeof(Image));
+        toggleObj.transform.SetParent(container.transform, false);
+        var toggle = toggleObj.GetComponent<Toggle>();
+        var toggleImg = toggleObj.GetComponent<Image>();
+        toggleImg.color = new Color(0.2f, 0.25f, 0.3f, 1f);
+        toggle.isOn = defaultValue;
+        
+        var toggleLayout = toggleObj.AddComponent<LayoutElement>();
+        toggleLayout.preferredWidth = 50;
+        
+        // Checkmark
+        var checkmark = new GameObject("Checkmark", typeof(Image));
+        checkmark.transform.SetParent(toggleObj.transform, false);
+        var checkImg = checkmark.GetComponent<Image>();
+        checkImg.color = new Color(0.2f, 0.8f, 0.3f, 1f);
+        var checkRect = checkmark.GetComponent<RectTransform>();
+        checkRect.anchorMin = Vector2.zero; checkRect.anchorMax = Vector2.one;
+        checkRect.offsetMin = new Vector2(5, 5); checkRect.offsetMax = new Vector2(-5, -5);
+        toggle.graphic = checkImg;
+        
+        // Label
+        var labelObj = new GameObject("Label", typeof(Text));
+        labelObj.transform.SetParent(container.transform, false);
+        var labelText = labelObj.GetComponent<Text>();
+        labelText.text = label;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 18;
+        labelText.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        return toggle;
+    }
+    
+    static Text CreateInfoText(Transform parent, string text)
+    {
+        var textObj = new GameObject("InfoText", typeof(Text));
+        textObj.transform.SetParent(parent, false);
+        var textComp = textObj.GetComponent<Text>();
+        textComp.text = text;
+        textComp.font = GetDefaultFont();
+        textComp.fontSize = 14;
+        textComp.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+        textComp.alignment = TextAnchor.MiddleLeft;
+        
+        var layout = textObj.AddComponent<LayoutElement>();
+        layout.preferredHeight = 30;
+        
+        return textComp;
+    }
 
     // Returns a reliable default font for editor-time UI building in Unity 6+
     static Font GetDefaultFont()
     {
-        // Unity 6: Try multiple paths for built-in fonts
-        Font font = null;
-        
-        // Method 1: Try AssetDatabase.GetBuiltinExtraResource with LegacyRuntime (Unity 6 preferred)
-        try { font = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf"); } catch { }
-        if (font != null) return font;
-        
-        // Method 2: Try EditorGUIUtility.Load
-        try { font = EditorGUIUtility.Load("LegacyRuntime.ttf") as Font; } catch { }
-        if (font != null) return font;
-        
-        // Method 3: Try AssetDatabase with exception handling
-        try { font = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf"); } catch { }
-        if (font != null) return font;
-        
-        // Method 4: Create dynamic font from OS (guaranteed to work)
-        try 
-        { 
-            font = Font.CreateDynamicFontFromOSFont("Arial", 16);
-            if (font != null && font.name != "Arial") // Check if it actually loaded
-                return font;
-        } 
-        catch { }
-        
-        // Method 5: Last resort - use Unity's default GUI font
-        try { return GUI.skin.font; } catch { }
-        
-        // Absolutely final fallback
+        // Simple and reliable: create dynamic font from OS
         return Font.CreateDynamicFontFromOSFont("Arial", 16);
     }
 }

@@ -9,15 +9,15 @@ public static class FontDebugger
     {
         Debug.Log("=== Font Loading Test ===");
         
-        // Test 1: Resources.GetBuiltinResource
+        // Test 1: AssetDatabase.GetBuiltinExtraResource
         try
         {
-            var font1 = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            Debug.Log($"Resources.GetBuiltinResource LegacyRuntime: {(font1 != null ? font1.name : "NULL")}");
+            var font1 = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf");
+            Debug.Log($"AssetDatabase.GetBuiltinExtraResource LegacyRuntime: {(font1 != null ? font1.name : "NULL")}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Resources.GetBuiltinResource LegacyRuntime failed: {e.Message}");
+            Debug.LogError($"AssetDatabase.GetBuiltinExtraResource LegacyRuntime failed: {e.Message}");
         }
         
         // Test 2: EditorGUIUtility.Load
@@ -31,15 +31,15 @@ public static class FontDebugger
             Debug.LogError($"EditorGUIUtility.Load LegacyRuntime failed: {e.Message}");
         }
         
-        // Test 3: AssetDatabase.GetBuiltinExtraResource
+        // Test 3: Try with Arial path as fallback
         try
         {
-            var font3 = AssetDatabase.GetBuiltinExtraResource<Font>("LegacyRuntime.ttf");
-            Debug.Log($"AssetDatabase.GetBuiltinExtraResource LegacyRuntime: {(font3 != null ? font3.name : "NULL")}");
+            var font3 = AssetDatabase.GetBuiltinExtraResource<Font>("Arial.ttf");
+            Debug.Log($"AssetDatabase.GetBuiltinExtraResource Arial: {(font3 != null ? font3.name : "NULL")}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"AssetDatabase.GetBuiltinExtraResource LegacyRuntime failed: {e.Message}");
+            Debug.LogError($"AssetDatabase.GetBuiltinExtraResource Arial failed: {e.Message}");
         }
         
         // Test 4: Dynamic font creation
