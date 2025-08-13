@@ -793,29 +793,41 @@ cam.transform.rotation = Quaternion.identity;
     
     static void CreateSkirmishUI(Transform parent)
     {
-        // Main container with dark military background
-        var container = new GameObject("SkirmishContainer", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        container.transform.SetParent(parent, false);
-        
-        var containerImg = container.GetComponent<Image>();
-        containerImg.color = new Color(0.02f, 0.05f, 0.08f, 1f); // Very dark military blue
-        
-        var containerVlg = container.GetComponent<VerticalLayoutGroup>();
-        containerVlg.spacing = 20f;
-        containerVlg.padding = new RectOffset(30, 30, 30, 30);
-        containerVlg.childControlWidth = true;
-        containerVlg.childControlHeight = false;
-        containerVlg.childForceExpandWidth = true;
-        
-        var containerFitter = container.GetComponent<ContentSizeFitter>();
-        containerFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        
+        // Scrollable area (content)
+        var scrollGO = new GameObject("SkirmishScroll", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
+        scrollGO.transform.SetParent(parent, false);
+        var scrollImg = scrollGO.GetComponent<Image>();
+        scrollImg.color = new Color(0.02f, 0.05f, 0.08f, 0.9f);
+        var svRect = scrollGO.GetComponent<RectTransform>();
+        svRect.anchorMin = new Vector2(0f, 0.18f); // leave space for bottom action bar
+        svRect.anchorMax = new Vector2(1f, 1f);
+        svRect.offsetMin = Vector2.zero; svRect.offsetMax = Vector2.zero;
+
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewport.transform.SetParent(scrollGO.transform, false);
+        var viewportRect = viewport.GetComponent<RectTransform>();
+        viewportRect.anchorMin = Vector2.zero; viewportRect.anchorMax = Vector2.one;
+        viewportRect.offsetMin = Vector2.zero; viewportRect.offsetMax = Vector2.zero;
+        viewport.GetComponent<Image>().color = Color.clear;
+
+        var container = new GameObject("SkirmishContent", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        container.transform.SetParent(viewport.transform, false);
         var containerRect = container.GetComponent<RectTransform>();
-        containerRect.anchorMin = Vector2.zero;
-        containerRect.anchorMax = Vector2.one;
-        containerRect.offsetMin = Vector2.zero;
-        containerRect.offsetMax = Vector2.zero;
-        
+        containerRect.anchorMin = new Vector2(0, 1); containerRect.anchorMax = new Vector2(1, 1);
+        containerRect.pivot = new Vector2(0.5f, 1f);
+        containerRect.anchoredPosition = Vector2.zero;
+
+        var vlg = container.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = 20f;
+        vlg.padding = new RectOffset(24, 24, 24, 24);
+        vlg.childControlWidth = true; vlg.childControlHeight = false; vlg.childForceExpandWidth = true;
+        container.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var scroll = scrollGO.GetComponent<ScrollRect>();
+        scroll.viewport = viewportRect;
+        scroll.content = containerRect;
+        scroll.horizontal = false; scroll.vertical = true;
+
         // Title
         var title = new GameObject("Title", typeof(Text));
         title.transform.SetParent(container.transform, false);
@@ -824,77 +836,88 @@ cam.transform.rotation = Quaternion.identity;
         titleText.font = GetDefaultFont();
         titleText.fontSize = 36;
         titleText.fontStyle = FontStyle.Bold;
-        titleText.color = new Color(1f, 0.85f, 0.4f, 1f); // Gold
+        titleText.color = new Color(1f, 0.85f, 0.4f, 1f);
         titleText.alignment = TextAnchor.MiddleCenter;
-        
         var titleLayout = title.AddComponent<LayoutElement>();
         titleLayout.preferredHeight = 60;
-        
+
         // Map Selection Section
         CreateMapSelectionSection(container.transform);
-        
+
         // Player Table Header
         CreatePlayerTableHeader(container.transform);
-        
+
         // Player rows container
         var playersContainer = new GameObject("PlayersContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         playersContainer.transform.SetParent(container.transform, false);
-        
         var playersVlg = playersContainer.GetComponent<VerticalLayoutGroup>();
         playersVlg.spacing = 5f;
         playersVlg.childControlWidth = true;
         playersVlg.childControlHeight = false;
         playersVlg.childForceExpandWidth = true;
-        
-        var playersFitter = playersContainer.GetComponent<ContentSizeFitter>();
-        playersFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        
+        playersContainer.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
         // Create player rows (Player + 3 AI max for 4 total)
         CreateMobilePlayerRow(playersContainer.transform, "Player", "Human", 1000, 1000, 1000, 1000, "None", false);
         CreateMobilePlayerRow(playersContainer.transform, "Computer1", "Easy", 1000, 1000, 1000, 1000, "Team1", true);
         CreateMobilePlayerRow(playersContainer.transform, "Computer2", "Medium", 1000, 1000, 1000, 1000, "Team1", true);
         CreateMobilePlayerRow(playersContainer.transform, "Computer3", "Hard", 1000, 1000, 1000, 1000, "None", true);
-        
+
+        // Starting Resources summary bar (visible labels + quantities)
+        var resBar = new GameObject("StartingResourcesBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        resBar.transform.SetParent(container.transform, false);
+        var resImg = resBar.GetComponent<Image>();
+        resImg.color = new Color(0.12f, 0.10f, 0.08f, 0.9f);
+        var resHlg = resBar.GetComponent<HorizontalLayoutGroup>();
+        resHlg.spacing = 12f; resHlg.padding = new RectOffset(16,16,10,10);
+        resHlg.childControlWidth = false; resHlg.childForceExpandWidth = false;
+
+        void AddRes(string name, int amount)
+        {
+            var group = new GameObject($"{name}Group", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            group.transform.SetParent(resBar.transform, false);
+            var gH = group.GetComponent<HorizontalLayoutGroup>(); gH.spacing = 6f; gH.childControlWidth = false;
+            var label = new GameObject($"{name}Label", typeof(Text)); label.transform.SetParent(group.transform, false);
+            var lt = label.GetComponent<Text>(); lt.font = GetDefaultFont(); lt.text = name + ":"; lt.fontSize = 16; lt.color = new Color(1f,0.85f,0.4f,1f);
+            var value = new GameObject($"{name}Value", typeof(Text)); value.transform.SetParent(group.transform, false);
+            var vt = value.GetComponent<Text>(); vt.font = GetDefaultFont(); vt.text = amount.ToString(); vt.fontSize = 16; vt.color = Color.white;
+        }
+        AddRes("Wood", 1000); AddRes("Stone", 1000); AddRes("Iron", 1000); AddRes("Gold", 1000);
+
         // Add Computer Button
         var addComputerBtn = CreateMilitaryButton(container.transform, "AddComputerButton", "+ ADD COMPUTER", new Color(0.2f, 0.4f, 0.2f, 1f));
-        var addBtnLayout = addComputerBtn.gameObject.AddComponent<LayoutElement>();
-        addBtnLayout.preferredHeight = 60;
-        
-        // Action Buttons
-        var actionArea = new GameObject("ActionArea", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        actionArea.transform.SetParent(container.transform, false);
-        
-        var actionHlg = actionArea.GetComponent<HorizontalLayoutGroup>();
-        actionHlg.spacing = 20f;
-        actionHlg.childControlWidth = true;
-        actionHlg.childControlHeight = true;
-        actionHlg.childForceExpandWidth = true;
-        actionHlg.childForceExpandHeight = false;
-        
-        var actionLayout = actionArea.AddComponent<LayoutElement>();
-        actionLayout.preferredHeight = 80;
-        
-        // Back Button
-        var backBtn = CreateMilitaryButton(actionArea.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.35f, 0.25f, 1f));
-        var backBtnLayout = backBtn.gameObject.AddComponent<LayoutElement>();
-        backBtnLayout.preferredWidth = 200;
-        
-        // Start Game Button
-        var startBtn = CreateMilitaryButton(actionArea.transform, "StartGameButton", "⚔ START BATTLE ⚔", new Color(0.6f, 0.15f, 0.1f, 1f));
-        var startBtnLayout = startBtn.gameObject.AddComponent<LayoutElement>();
-        startBtnLayout.flexibleWidth = 1f;
-        
+        addComputerBtn.gameObject.AddComponent<LayoutElement>().preferredHeight = 60;
+
+        // Bottom Action Bar (always visible)
+        var actionBar = new GameObject("ActionBar", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+        actionBar.transform.SetParent(parent, false);
+        var barRect = actionBar.GetComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0f, 0f); barRect.anchorMax = new Vector2(1f, 0.16f);
+        barRect.offsetMin = Vector2.zero; barRect.offsetMax = Vector2.zero;
+        var barImg = actionBar.GetComponent<Image>();
+        barImg.color = new Color(0.08f, 0.06f, 0.03f, 0.98f);
+        var barHlg = actionBar.GetComponent<HorizontalLayoutGroup>();
+        barHlg.spacing = 20f; barHlg.padding = new RectOffset(24,24,16,16);
+        barHlg.childControlWidth = true; barHlg.childForceExpandWidth = true;
+
+        // Back Button (left)
+        var backBtn = CreateMilitaryButton(actionBar.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.35f, 0.25f, 1f));
+        backBtn.gameObject.AddComponent<LayoutElement>().preferredWidth = 220;
+        // Start Game (fills remaining)
+        var startBtn = CreateMilitaryButton(actionBar.transform, "StartGameButton", "⚔ START BATTLE ⚔", new Color(0.6f, 0.15f, 0.1f, 1f));
+        var startLayout = startBtn.gameObject.AddComponent<LayoutElement>();
+        startLayout.flexibleWidth = 1f;
+
         // Wire up back button
         backBtn.onClick.AddListener(() => {
             var canvas = parent.root.gameObject;
             var gameModeMenu = canvas.GetComponent<GameModeMenu>();
             if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
         });
-        
-        // Add SkirmishSetup component
-        var skirmishSetup = container.AddComponent<SkirmishSetup>();
-        skirmishSetup.startGameButton = startBtn;
-        skirmishSetup.backButton = backBtn;
+
+        // Hook to SkirmishSetup
+        var skirmishSetup = scrollGO.AddComponent<SkirmishSetup>();
+        skirmishSetup.startGameButton = startBtn; skirmishSetup.backButton = backBtn;
     }
     
     static void CreateMapSelectionSection(Transform parent)
@@ -1618,6 +1641,17 @@ cam.transform.rotation = Quaternion.identity;
         var layout = dd.AddComponent<LayoutElement>();
         layout.preferredHeight = 60;
         layout.flexibleWidth = 1f;
+
+    // Caption label (what shows when closed)
+    var caption = new GameObject("Label", typeof(RectTransform), typeof(Text));
+    caption.transform.SetParent(dd.transform, false);
+    var capRect = caption.GetComponent<RectTransform>();
+    capRect.anchorMin = Vector2.zero; capRect.anchorMax = Vector2.one;
+    capRect.offsetMin = new Vector2(10, 5); capRect.offsetMax = new Vector2(-30, -5);
+    var capText = caption.GetComponent<Text>();
+    capText.font = GetDefaultFont();
+    capText.fontSize = 18; capText.alignment = TextAnchor.MiddleLeft;
+    capText.color = new Color(1f, 0.95f, 0.85f, 1f);
         
         // Create proper dropdown template
         var template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -1698,7 +1732,7 @@ cam.transform.rotation = Quaternion.identity;
         var checkImg = itemCheckmark.GetComponent<Image>();
         checkImg.color = new Color(1f, 0.85f, 0.4f, 1f);
         
-        // Item label
+    // Item label (for options)
         var itemLabel = new GameObject("Item Label", typeof(RectTransform), typeof(Text));
         itemLabel.transform.SetParent(item.transform, false);
         var labelRect = itemLabel.GetComponent<RectTransform>();
@@ -1723,10 +1757,10 @@ cam.transform.rotation = Quaternion.identity;
         scrollRect.horizontal = false;
         scrollRect.vertical = true;
         
-        // Assign template to dropdown
+    // Assign template and texts to dropdown
         dropdown.template = templateRect;
-        dropdown.captionText = labelText;
-        dropdown.itemText = labelText;
+    dropdown.captionText = capText;
+    dropdown.itemText = labelText;
         
         // Gold border for dropdown
         var border = new GameObject("Border", typeof(Image));
@@ -1807,10 +1841,19 @@ cam.transform.rotation = Quaternion.identity;
         labelText.color = Color.white;
         labelText.fontSize = 12;
         labelText.alignment = TextAnchor.MiddleCenter;
-        
-        dropdown.template = templateRect;
-        dropdown.captionText = labelText;
-        dropdown.itemText = labelText;
+    // Caption label
+    var caption = new GameObject("Label", typeof(Text));
+    caption.transform.SetParent(dd.transform, false);
+    var capRect = caption.GetComponent<RectTransform>();
+    capRect.anchorMin = Vector2.zero; capRect.anchorMax = Vector2.one;
+    capRect.offsetMin = new Vector2(6, 2); capRect.offsetMax = new Vector2(-6, -2);
+    var capText = caption.GetComponent<Text>();
+    capText.font = GetDefaultFont(); capText.fontSize = 12;
+    capText.color = Color.white; capText.alignment = TextAnchor.MiddleCenter;
+
+    dropdown.template = templateRect;
+    dropdown.captionText = capText;
+    dropdown.itemText = labelText;
         
         dropdown.options.Clear();
         foreach (var option in options)
