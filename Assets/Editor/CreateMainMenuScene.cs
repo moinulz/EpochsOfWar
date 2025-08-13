@@ -63,10 +63,8 @@ cam.transform.rotation = Quaternion.identity;
     var canvas = canvasGO.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
-    scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-    scaler.referenceResolution = new Vector2(1920, 1080);
-
-        // Background panel with gradient
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920); // Mobile portrait optimized        // Background panel with gradient
         var bg = new GameObject("Background", typeof(Image));
         bg.transform.SetParent(canvasGO.transform, false);
         var bgRect = bg.GetComponent<RectTransform>();
@@ -776,9 +774,11 @@ cam.transform.rotation = Quaternion.identity;
         var backBtn = MakeButton(parent, "CampaignBackButton", "BACK");
         SetButtonPosition(backBtn, new Vector2(0.5f, 0.3f), new Vector2(200, 50));
         
-        // Wire up back button to return to main game mode selection
+        // Wire up back button to return to main game mode selection - fix component reference
         backBtn.onClick.AddListener(() => {
-            var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
+            // Find the GameModeMenu component properly
+            var canvas = parent.root.gameObject;
+            var gameModeMenu = canvas.GetComponent<GameModeMenu>();
             if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
         });
         
@@ -793,120 +793,334 @@ cam.transform.rotation = Quaternion.identity;
     
     static void CreateSkirmishUI(Transform parent)
     {
+        // Main container with dark military background
+        var container = new GameObject("SkirmishContainer", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        container.transform.SetParent(parent, false);
+        
+        var containerImg = container.GetComponent<Image>();
+        containerImg.color = new Color(0.02f, 0.05f, 0.08f, 1f); // Very dark military blue
+        
+        var containerVlg = container.GetComponent<VerticalLayoutGroup>();
+        containerVlg.spacing = 20f;
+        containerVlg.padding = new RectOffset(30, 30, 30, 30);
+        containerVlg.childControlWidth = true;
+        containerVlg.childControlHeight = false;
+        containerVlg.childForceExpandWidth = true;
+        
+        var containerFitter = container.GetComponent<ContentSizeFitter>();
+        containerFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        
+        var containerRect = container.GetComponent<RectTransform>();
+        containerRect.anchorMin = Vector2.zero;
+        containerRect.anchorMax = Vector2.one;
+        containerRect.offsetMin = Vector2.zero;
+        containerRect.offsetMax = Vector2.zero;
+        
         // Title
-        var title = new GameObject("SkirmishTitle", typeof(Text));
-        title.transform.SetParent(parent, false);
+        var title = new GameObject("Title", typeof(Text));
+        title.transform.SetParent(container.transform, false);
         var titleText = title.GetComponent<Text>();
-        titleText.text = "SKIRMISH SETUP";
+        titleText.text = "⚔ SKIRMISH SETUP ⚔";
         titleText.font = GetDefaultFont();
-        titleText.fontSize = 48;
-        titleText.color = new Color(0.9f, 0.9f, 1f, 1f);
+        titleText.fontSize = 36;
+        titleText.fontStyle = FontStyle.Bold;
+        titleText.color = new Color(1f, 0.85f, 0.4f, 1f); // Gold
         titleText.alignment = TextAnchor.MiddleCenter;
-        var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0, 0.9f);
-        titleRect.anchorMax = new Vector2(1, 0.98f);
-        titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
         
-        // Main content area with scroll
-        var scrollArea = new GameObject("ScrollArea", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
-        scrollArea.transform.SetParent(parent, false);
-        var scrollRect = scrollArea.GetComponent<RectTransform>();
-        scrollRect.anchorMin = new Vector2(0.05f, 0.12f);
-        scrollRect.anchorMax = new Vector2(0.95f, 0.85f);
-        scrollRect.offsetMin = Vector2.zero; scrollRect.offsetMax = Vector2.zero;
-        
-        var scrollImg = scrollArea.GetComponent<Image>();
-        scrollImg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
-        
-        var scroll = scrollArea.GetComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.vertical = true;
-        
-        // Content container
-        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        content.transform.SetParent(scrollArea.transform, false);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0, 1);
-        contentRect.anchorMax = new Vector2(1, 1);
-        contentRect.pivot = new Vector2(0.5f, 1);
-        contentRect.anchoredPosition = Vector2.zero;
-        
-        var vlg = content.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 20f;
-        vlg.padding = new RectOffset(30, 30, 20, 20);
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-        
-        var fitter = content.GetComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        
-        scroll.content = contentRect;
+        var titleLayout = title.AddComponent<LayoutElement>();
+        titleLayout.preferredHeight = 60;
         
         // Map Selection Section
-        CreateSection(content.transform, "MAP SELECTION", (sectionContent) => {
-            var mapDropdown = CreateStyledDropdown(sectionContent, "Map", new[] { "Default Map (4 Players)", "Small Map (2 Players)", "Large Map (6 Players)" });
-            var mapInfo = CreateInfoText(sectionContent, "A balanced map with strategic choke points and resource distribution.");
-        });
+        CreateMapSelectionSection(container.transform);
         
-        // Player Setup Section
-        CreateSection(content.transform, "PLAYERS", (sectionContent) => {
-            for (int i = 0; i < 4; i++)
-            {
-                CreatePlayerRow(sectionContent, i);
-            }
-        });
+        // Player Table Header
+        CreatePlayerTableHeader(container.transform);
         
-        // Game Options Section
-        CreateSection(content.transform, "GAME OPTIONS", (sectionContent) => {
-            var victoryDropdown = CreateStyledDropdown(sectionContent, "Victory Condition", new[] { "Destroy All Capitals", "Eliminate All Units", "Last Standing", "Custom" });
-            var resourcesToggle = CreateStyledToggle(sectionContent, "Custom Starting Resources", false);
-        });
+        // Player rows container
+        var playersContainer = new GameObject("PlayersContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        playersContainer.transform.SetParent(container.transform, false);
         
-        // Action buttons at bottom
-        var buttonArea = new GameObject("ButtonArea", typeof(RectTransform));
-        buttonArea.transform.SetParent(parent, false);
-        var buttonRect = buttonArea.GetComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.1f, 0.02f);
-        buttonRect.anchorMax = new Vector2(0.9f, 0.1f);
-        buttonRect.offsetMin = Vector2.zero; buttonRect.offsetMax = Vector2.zero;
+        var playersVlg = playersContainer.GetComponent<VerticalLayoutGroup>();
+        playersVlg.spacing = 5f;
+        playersVlg.childControlWidth = true;
+        playersVlg.childControlHeight = false;
+        playersVlg.childForceExpandWidth = true;
         
-        var startBtn = CreateModernButton(buttonArea.transform, "StartGameButton", "START GAME", new Color(0.2f, 0.6f, 0.3f, 1f));
-        var startBtnRect = startBtn.GetComponent<RectTransform>();
-        startBtnRect.anchorMin = new Vector2(0.55f, 0.2f);
-        startBtnRect.anchorMax = new Vector2(0.95f, 0.8f);
-        startBtnRect.offsetMin = Vector2.zero; startBtnRect.offsetMax = Vector2.zero;
+        var playersFitter = playersContainer.GetComponent<ContentSizeFitter>();
+        playersFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         
-        var backBtn = CreateModernButton(buttonArea.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.4f, 0.4f, 1f));
-        var backBtnRect = backBtn.GetComponent<RectTransform>();
-        backBtnRect.anchorMin = new Vector2(0.05f, 0.2f);
-        backBtnRect.anchorMax = new Vector2(0.35f, 0.8f);
-        backBtnRect.offsetMin = Vector2.zero; backBtnRect.offsetMax = Vector2.zero;
+        // Create player rows (Player + 3 AI max for 4 total)
+        CreateMobilePlayerRow(playersContainer.transform, "Player", "Human", 1000, 1000, 1000, 1000, "None", false);
+        CreateMobilePlayerRow(playersContainer.transform, "Computer1", "Easy", 1000, 1000, 1000, 1000, "Team1", true);
+        CreateMobilePlayerRow(playersContainer.transform, "Computer2", "Medium", 1000, 1000, 1000, 1000, "Team1", true);
+        CreateMobilePlayerRow(playersContainer.transform, "Computer3", "Hard", 1000, 1000, 1000, 1000, "None", true);
+        
+        // Add Computer Button
+        var addComputerBtn = CreateMilitaryButton(container.transform, "AddComputerButton", "+ ADD COMPUTER", new Color(0.2f, 0.4f, 0.2f, 1f));
+        var addBtnLayout = addComputerBtn.gameObject.AddComponent<LayoutElement>();
+        addBtnLayout.preferredHeight = 60;
+        
+        // Action Buttons
+        var actionArea = new GameObject("ActionArea", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        actionArea.transform.SetParent(container.transform, false);
+        
+        var actionHlg = actionArea.GetComponent<HorizontalLayoutGroup>();
+        actionHlg.spacing = 20f;
+        actionHlg.childControlWidth = true;
+        actionHlg.childControlHeight = true;
+        actionHlg.childForceExpandWidth = true;
+        actionHlg.childForceExpandHeight = false;
+        
+        var actionLayout = actionArea.AddComponent<LayoutElement>();
+        actionLayout.preferredHeight = 80;
+        
+        // Back Button
+        var backBtn = CreateMilitaryButton(actionArea.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.35f, 0.25f, 1f));
+        var backBtnLayout = backBtn.gameObject.AddComponent<LayoutElement>();
+        backBtnLayout.preferredWidth = 200;
+        
+        // Start Game Button
+        var startBtn = CreateMilitaryButton(actionArea.transform, "StartGameButton", "⚔ START BATTLE ⚔", new Color(0.6f, 0.15f, 0.1f, 1f));
+        var startBtnLayout = startBtn.gameObject.AddComponent<LayoutElement>();
+        startBtnLayout.flexibleWidth = 1f;
         
         // Wire up back button
         backBtn.onClick.AddListener(() => {
-            var gameModeMenu = parent.GetComponentInParent<GameModeMenu>();
+            var canvas = parent.root.gameObject;
+            var gameModeMenu = canvas.GetComponent<GameModeMenu>();
             if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
         });
         
         // Add SkirmishSetup component
-        var skirmishSetup = scrollArea.AddComponent<SkirmishSetup>();
+        var skirmishSetup = container.AddComponent<SkirmishSetup>();
         skirmishSetup.startGameButton = startBtn;
         skirmishSetup.backButton = backBtn;
     }
     
-    static void CreateSection(Transform parent, string title, System.Action<Transform> createContent)
+    static void CreateMapSelectionSection(Transform parent)
     {
-        var section = new GameObject($"Section_{title}", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(Image));
+        var section = new GameObject("MapSection", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
         section.transform.SetParent(parent, false);
         
         var sectionImg = section.GetComponent<Image>();
-        sectionImg.color = new Color(0.12f, 0.16f, 0.22f, 0.8f);
+        sectionImg.color = new Color(0.12f, 0.10f, 0.08f, 0.9f);
+        
+        var sectionHlg = section.GetComponent<HorizontalLayoutGroup>();
+        sectionHlg.spacing = 20f;
+        sectionHlg.padding = new RectOffset(20, 20, 15, 15);
+        sectionHlg.childControlWidth = false;
+        sectionHlg.childControlHeight = true;
+        sectionHlg.childForceExpandWidth = false;
+        sectionHlg.childForceExpandHeight = false;
+        
+        var sectionLayout = section.AddComponent<LayoutElement>();
+        sectionLayout.preferredHeight = 80;
+        
+        // Map label
+        var mapLabel = CreateMilitaryLabel(section.transform, "Map:", 100);
+        var mapLabelLayout = mapLabel.AddComponent<LayoutElement>();
+        mapLabelLayout.preferredWidth = 100;
+        
+        // Map dropdown
+        var mapDropdown = CreateMilitaryDropdown(section.transform, new[] { 
+            "Valley Forge (4 Players)", 
+            "Highland Clash (4 Players)", 
+            "Desert Storm (4 Players)" 
+        });
+        var mapDropdownLayout = mapDropdown.gameObject.AddComponent<LayoutElement>();
+        mapDropdownLayout.flexibleWidth = 1f;
+        mapDropdownLayout.preferredHeight = 50;
+    }
+    
+    static void CreatePlayerTableHeader(Transform parent)
+    {
+        var header = new GameObject("PlayerTableHeader", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        header.transform.SetParent(parent, false);
+        
+        var headerImg = header.GetComponent<Image>();
+        headerImg.color = new Color(1f, 0.85f, 0.4f, 0.3f); // Gold header
+        
+        var headerHlg = header.GetComponent<HorizontalLayoutGroup>();
+        headerHlg.spacing = 5f;
+        headerHlg.padding = new RectOffset(10, 10, 8, 8);
+        headerHlg.childControlWidth = false;
+        headerHlg.childControlHeight = true;
+        headerHlg.childForceExpandWidth = false;
+        headerHlg.childForceExpandHeight = false;
+        
+        var headerLayout = header.AddComponent<LayoutElement>();
+        headerLayout.preferredHeight = 40;
+        
+        // Header labels with proper widths for mobile
+        CreateHeaderLabel(header.transform, "Players", 120);
+        CreateHeaderLabel(header.transform, "Difficulty", 100);
+        CreateHeaderLabel(header.transform, "Wood", 80);
+        CreateHeaderLabel(header.transform, "Stone", 80);
+        CreateHeaderLabel(header.transform, "Iron", 80);
+        CreateHeaderLabel(header.transform, "Gold", 80);
+        CreateHeaderLabel(header.transform, "Team", 100);
+        CreateHeaderLabel(header.transform, "Action", 80);
+    }
+    
+    static void CreateHeaderLabel(Transform parent, string text, float width)
+    {
+        var label = new GameObject($"Header_{text}", typeof(Text));
+        label.transform.SetParent(parent, false);
+        var labelText = label.GetComponent<Text>();
+        labelText.text = text;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 16;
+        labelText.fontStyle = FontStyle.Bold;
+        labelText.color = new Color(0.1f, 0.1f, 0.1f, 1f); // Dark text on gold
+        labelText.alignment = TextAnchor.MiddleCenter;
+        
+        var layout = label.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+    }
+    
+    static void CreateMobilePlayerRow(Transform parent, string playerName, string difficulty, int wood, int stone, int iron, int gold, string team, bool canRemove)
+    {
+        var row = new GameObject($"PlayerRow_{playerName}", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        row.transform.SetParent(parent, false);
+        
+        var rowImg = row.GetComponent<Image>();
+        rowImg.color = new Color(0.08f, 0.12f, 0.16f, 0.6f);
+        
+        var hlg = row.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 5f;
+        hlg.padding = new RectOffset(10, 10, 8, 8);
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+        
+        var rowLayout = row.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 50;
+        
+        // Player name
+        CreateRowLabel(row.transform, playerName, 120);
+        
+        // Difficulty dropdown or label
+        if (playerName == "Player")
+        {
+            CreateRowLabel(row.transform, "Human", 100);
+        }
+        else
+        {
+            var diffDropdown = CreateCompactMilitaryDropdown(row.transform, new[] { "Easy", "Medium", "Hard", "Expert" }, 100);
+            diffDropdown.value = difficulty == "Easy" ? 0 : difficulty == "Medium" ? 1 : difficulty == "Hard" ? 2 : 3;
+        }
+        
+        // Resource fields
+        CreateResourceField(row.transform, wood.ToString(), 80);
+        CreateResourceField(row.transform, stone.ToString(), 80);
+        CreateResourceField(row.transform, iron.ToString(), 80);
+        CreateResourceField(row.transform, gold.ToString(), 80);
+        
+        // Team dropdown
+        var teamDropdown = CreateCompactMilitaryDropdown(row.transform, new[] { "None", "Team1", "Team2", "Team3" }, 100);
+        teamDropdown.value = team == "None" ? 0 : team == "Team1" ? 1 : team == "Team2" ? 2 : 3;
+        
+        // Remove button or blank
+        if (canRemove)
+        {
+            var removeBtn = CreateSmallMilitaryButton(row.transform, "Remove", new Color(0.6f, 0.2f, 0.1f, 1f), 80);
+        }
+        else
+        {
+            CreateRowLabel(row.transform, "", 80); // Empty space
+        }
+    }
+    
+    static void CreateRowLabel(Transform parent, string text, float width)
+    {
+        var label = new GameObject($"RowLabel_{text}", typeof(Text));
+        label.transform.SetParent(parent, false);
+        var labelText = label.GetComponent<Text>();
+        labelText.text = text;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 14;
+        labelText.color = new Color(1f, 0.95f, 0.8f, 1f);
+        labelText.alignment = TextAnchor.MiddleCenter;
+        
+        var layout = label.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+    }
+    
+    static void CreateResourceField(Transform parent, string value, float width)
+    {
+        var field = new GameObject("ResourceField", typeof(Image), typeof(InputField));
+        field.transform.SetParent(parent, false);
+        
+        var fieldImg = field.GetComponent<Image>();
+        fieldImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        var inputField = field.GetComponent<InputField>();
+        inputField.text = value;
+        
+        // Text component for the input field
+        var textObj = new GameObject("Text", typeof(Text));
+        textObj.transform.SetParent(field.transform, false);
+        var text = textObj.GetComponent<Text>();
+        text.font = GetDefaultFont();
+        text.fontSize = 14;
+        text.color = Color.white;
+        text.alignment = TextAnchor.MiddleCenter;
+        
+        var textRect = textObj.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(5, 2);
+        textRect.offsetMax = new Vector2(-5, -2);
+        
+        inputField.textComponent = text;
+        
+        var layout = field.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+    }
+    
+    static Button CreateSmallMilitaryButton(Transform parent, string text, Color color, float width)
+    {
+        var btn = new GameObject($"SmallButton_{text}", typeof(Image), typeof(Button));
+        btn.transform.SetParent(parent, false);
+        
+        var img = btn.GetComponent<Image>();
+        img.color = color;
+        
+        // Text
+        var textObj = new GameObject("Text", typeof(Text));
+        textObj.transform.SetParent(btn.transform, false);
+        var textComp = textObj.GetComponent<Text>();
+        textComp.text = text;
+        textComp.font = GetDefaultFont();
+        textComp.fontSize = 12;
+        textComp.fontStyle = FontStyle.Bold;
+        textComp.color = Color.white;
+        textComp.alignment = TextAnchor.MiddleCenter;
+        
+        var textRect = textObj.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+        
+        var layout = btn.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        
+        return btn.GetComponent<Button>();
+    }
+    
+    static void CreateSection(Transform parent, string title, System.Action<Transform> createContent)
+    {
+        var section = new GameObject($"Section_{title.Replace(" ", "")}", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(Image));
+        section.transform.SetParent(parent, false);
+        
+        var sectionImg = section.GetComponent<Image>();
+        sectionImg.color = new Color(0.12f, 0.10f, 0.08f, 0.9f); // Dark military with transparency
         
         var sectionVlg = section.GetComponent<VerticalLayoutGroup>();
-        sectionVlg.spacing = 10f;
-        sectionVlg.padding = new RectOffset(20, 20, 15, 15);
+        sectionVlg.spacing = 15f;
+        sectionVlg.padding = new RectOffset(25, 25, 20, 20);
         sectionVlg.childControlWidth = true;
         sectionVlg.childControlHeight = false;
         sectionVlg.childForceExpandWidth = true;
@@ -914,21 +1128,153 @@ cam.transform.rotation = Quaternion.identity;
         var sectionFitter = section.GetComponent<ContentSizeFitter>();
         sectionFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         
-        // Section title
+        // Add subtle border
+        var border = new GameObject("Border", typeof(Image));
+        border.transform.SetParent(section.transform, false);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(1f, 0.85f, 0.4f, 0.3f); // Gold border
+        var borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = new Vector2(0, 0); borderRect.offsetMax = new Vector2(0, 0);
+        
+        var innerBorder = new GameObject("InnerBorder", typeof(Image));
+        innerBorder.transform.SetParent(border.transform, false);
+        var innerImg = innerBorder.GetComponent<Image>();
+        innerImg.color = new Color(0.12f, 0.10f, 0.08f, 1f);
+        var innerRect = innerBorder.GetComponent<RectTransform>();
+        innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+        innerRect.offsetMin = new Vector2(3, 3); innerRect.offsetMax = new Vector2(-3, -3);
+        
+        // Section title with military styling
         var titleObj = new GameObject("Title", typeof(Text));
         titleObj.transform.SetParent(section.transform, false);
         var titleText = titleObj.GetComponent<Text>();
         titleText.text = title;
         titleText.font = GetDefaultFont();
-        titleText.fontSize = 28;
-        titleText.color = new Color(0.8f, 0.9f, 1f, 1f);
+        titleText.fontSize = 32;
+        titleText.color = new Color(1f, 0.85f, 0.4f, 1f); // Gold
         titleText.fontStyle = FontStyle.Bold;
-        titleText.alignment = TextAnchor.MiddleLeft;
+        titleText.alignment = TextAnchor.MiddleCenter;
         
         var titleLayout = titleObj.AddComponent<LayoutElement>();
-        titleLayout.preferredHeight = 35;
+        titleLayout.preferredHeight = 45;
         
         createContent(section.transform);
+    }
+    
+    static void CreateMobilePlayerRow(Transform parent, int playerIndex)
+    {
+        var row = new GameObject($"Player_{playerIndex}", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(Image));
+        row.transform.SetParent(parent, false);
+        
+        var rowImg = row.GetComponent<Image>();
+        rowImg.color = new Color(0.08f, 0.12f, 0.16f, 0.7f); // Dark blue-gray
+        
+        var vlg = row.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = 8f;
+        vlg.padding = new RectOffset(15, 15, 12, 12);
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = true;
+        
+        var rowLayout = row.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 120;
+        
+        // Player name row
+        var nameRow = new GameObject("NameRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        nameRow.transform.SetParent(row.transform, false);
+        var nameHlg = nameRow.GetComponent<HorizontalLayoutGroup>();
+        nameHlg.spacing = 15f;
+        nameHlg.childControlWidth = false;
+        nameHlg.childControlHeight = true;
+        nameHlg.childForceExpandWidth = false;
+        
+        var nameLayout = nameRow.AddComponent<LayoutElement>();
+        nameLayout.preferredHeight = 40;
+        
+        // Player label with rank
+        var label = CreateMilitaryLabel(nameRow.transform, $"⭐ PLAYER {playerIndex + 1}", 150);
+        
+        // Color selector button
+        var colorBtn = CreateMobileColorButton(nameRow.transform, GetPlayerColor(playerIndex));
+        
+        // Controls row
+        var controlsRow = new GameObject("ControlsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        controlsRow.transform.SetParent(row.transform, false);
+        var controlsHlg = controlsRow.GetComponent<HorizontalLayoutGroup>();
+        controlsHlg.spacing = 10f;
+        controlsHlg.childControlWidth = false;
+        controlsHlg.childControlHeight = true;
+        controlsHlg.childForceExpandWidth = false;
+        
+        var controlsLayout = controlsRow.AddComponent<LayoutElement>();
+        controlsLayout.preferredHeight = 50;
+        
+        // Player type dropdown
+        var typeDropdown = CreateCompactMilitaryDropdown(controlsRow.transform, new[] { "Human", "AI Easy", "AI Normal", "AI Hard", "Disabled" }, 140);
+        
+        // Team dropdown  
+        var teamDropdown = CreateCompactMilitaryDropdown(controlsRow.transform, new[] { "No Team", "Team 1", "Team 2", "Team 3" }, 120);
+    }
+    
+    static void CreateResourceButton(Transform parent, string icon, string resourceName, string amount)
+    {
+        var btn = new GameObject($"{resourceName}Button", typeof(Image), typeof(Button));
+        btn.transform.SetParent(parent, false);
+        var img = btn.GetComponent<Image>();
+        img.color = new Color(0.2f, 0.15f, 0.1f, 1f); // Dark military brown
+        
+        // Icon
+        var iconObj = new GameObject("Icon", typeof(Text));
+        iconObj.transform.SetParent(btn.transform, false);
+        var iconText = iconObj.GetComponent<Text>();
+        iconText.text = icon;
+        iconText.font = GetDefaultFont();
+        iconText.fontSize = 32;
+        iconText.alignment = TextAnchor.MiddleCenter;
+        var iconRect = iconObj.GetComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0, 0.5f);
+        iconRect.anchorMax = new Vector2(1, 1f);
+        iconRect.offsetMin = Vector2.zero; iconRect.offsetMax = Vector2.zero;
+        
+        // Resource name
+        var nameObj = new GameObject("Name", typeof(Text));
+        nameObj.transform.SetParent(btn.transform, false);
+        var nameText = nameObj.GetComponent<Text>();
+        nameText.text = resourceName;
+        nameText.font = GetDefaultFont();
+        nameText.fontSize = 16;
+        nameText.fontStyle = FontStyle.Bold;
+        nameText.color = new Color(1f, 0.85f, 0.4f, 1f); // Gold
+        nameText.alignment = TextAnchor.MiddleCenter;
+        var nameRect = nameObj.GetComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0, 0.3f);
+        nameRect.anchorMax = new Vector2(1, 0.5f);
+        nameRect.offsetMin = Vector2.zero; nameRect.offsetMax = Vector2.zero;
+        
+        // Amount
+        var amountObj = new GameObject("Amount", typeof(Text));
+        amountObj.transform.SetParent(btn.transform, false);
+        var amountText = amountObj.GetComponent<Text>();
+        amountText.text = amount;
+        amountText.font = GetDefaultFont();
+        amountText.fontSize = 20;
+        amountText.fontStyle = FontStyle.Bold;
+        amountText.color = Color.white;
+        amountText.alignment = TextAnchor.MiddleCenter;
+        var amountRect = amountObj.GetComponent<RectTransform>();
+        amountRect.anchorMin = new Vector2(0, 0f);
+        amountRect.anchorMax = new Vector2(1, 0.3f);
+        amountRect.offsetMin = Vector2.zero; amountRect.offsetMax = Vector2.zero;
+        
+        // Gold border
+        var border = new GameObject("Border", typeof(Image));
+        border.transform.SetParent(btn.transform, false);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(1f, 0.85f, 0.4f, 0.6f);
+        var borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = new Vector2(2, 2); borderRect.offsetMax = new Vector2(-2, -2);
     }
     
     static void CreatePlayerRow(Transform parent, int playerIndex)
@@ -1217,6 +1563,325 @@ cam.transform.rotation = Quaternion.identity;
         
         var layout = textObj.AddComponent<LayoutElement>();
         layout.preferredHeight = 30;
+        
+        return textComp;
+    }
+    
+    static Button CreateMilitaryButton(Transform parent, string name, string label, Color color)
+    {
+        var go = new GameObject(name, typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var img = go.GetComponent<Image>();
+        img.color = color;
+        
+        // Military-style border
+        var border = new GameObject("Border", typeof(Image));
+        border.transform.SetParent(go.transform, false);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(1f, 0.85f, 0.4f, 0.8f); // Gold border
+        var borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = new Vector2(0, 0); borderRect.offsetMax = new Vector2(0, 0);
+        
+        var innerBorder = new GameObject("InnerBorder", typeof(Image));
+        innerBorder.transform.SetParent(border.transform, false);
+        var innerImg = innerBorder.GetComponent<Image>();
+        innerImg.color = color;
+        var innerRect = innerBorder.GetComponent<RectTransform>();
+        innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+        innerRect.offsetMin = new Vector2(4, 4); innerRect.offsetMax = new Vector2(-4, -4);
+
+        var textGO = new GameObject("Label", typeof(Text));
+        textGO.transform.SetParent(go.transform, false);
+        var t = textGO.GetComponent<Text>();
+        t.text = label;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.font = GetDefaultFont();
+        t.color = new Color(1f, 0.95f, 0.8f, 1f); // Off-white
+        t.fontSize = 28;
+        t.fontStyle = FontStyle.Bold;
+        var tr = textGO.GetComponent<RectTransform>();
+        tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+        tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
+
+        return go.GetComponent<Button>();
+    }
+    
+    static Dropdown CreateMilitaryDropdown(Transform parent, string[] options)
+    {
+        var dd = new GameObject("MilitaryDropdown", typeof(Image), typeof(Dropdown));
+        dd.transform.SetParent(parent, false);
+        var dropdown = dd.GetComponent<Dropdown>();
+        var ddImg = dd.GetComponent<Image>();
+        ddImg.color = new Color(0.15f, 0.12f, 0.08f, 1f); // Dark military brown
+        
+        var layout = dd.AddComponent<LayoutElement>();
+        layout.preferredHeight = 60;
+        layout.flexibleWidth = 1f;
+        
+        // Create proper dropdown template
+        var template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+        template.transform.SetParent(dd.transform, false);
+        template.SetActive(false);
+        
+        var templateImg = template.GetComponent<Image>();
+        templateImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        var templateRect = template.GetComponent<RectTransform>();
+        templateRect.anchorMin = new Vector2(0, 0);
+        templateRect.anchorMax = new Vector2(1, 0);
+        templateRect.anchoredPosition = new Vector2(0, 2);
+        templateRect.sizeDelta = new Vector2(0, 150);
+        
+        // Viewport
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewport.transform.SetParent(template.transform, false);
+        var viewportRect = viewport.GetComponent<RectTransform>();
+        viewportRect.anchorMin = Vector2.zero;
+        viewportRect.anchorMax = Vector2.one;
+        viewportRect.sizeDelta = Vector2.zero;
+        viewportRect.anchoredPosition = Vector2.zero;
+        
+        var viewportImg = viewport.GetComponent<Image>();
+        viewportImg.color = Color.clear;
+        
+        // Content
+        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(viewport.transform, false);
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0, 1);
+        contentRect.anchorMax = new Vector2(1, 1);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = new Vector2(0, 28);
+        
+        var contentVlg = content.GetComponent<VerticalLayoutGroup>();
+        contentVlg.spacing = 1;
+        
+        var contentFitter = content.GetComponent<ContentSizeFitter>();
+        contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        
+        // Item template
+        var item = new GameObject("Item", typeof(RectTransform), typeof(Toggle), typeof(Image));
+        item.transform.SetParent(content.transform, false);
+        
+        var itemRect = item.GetComponent<RectTransform>();
+        itemRect.anchorMin = Vector2.zero;
+        itemRect.anchorMax = new Vector2(1, 1);
+        itemRect.sizeDelta = new Vector2(0, 20);
+        
+        var itemToggle = item.GetComponent<Toggle>();
+        itemToggle.toggleTransition = Toggle.ToggleTransition.Fade;
+        
+        var itemImg = item.GetComponent<Image>();
+        itemImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        // Item background
+        var itemBackground = new GameObject("Item Background", typeof(RectTransform), typeof(Image));
+        itemBackground.transform.SetParent(item.transform, false);
+        var itemBgRect = itemBackground.GetComponent<RectTransform>();
+        itemBgRect.anchorMin = Vector2.zero;
+        itemBgRect.anchorMax = Vector2.one;
+        itemBgRect.sizeDelta = Vector2.zero;
+        
+        var itemBgImg = itemBackground.GetComponent<Image>();
+        itemBgImg.color = new Color(0.25f, 0.22f, 0.18f, 1f);
+        
+        // Item checkmark
+        var itemCheckmark = new GameObject("Item Checkmark", typeof(RectTransform), typeof(Image));
+        itemCheckmark.transform.SetParent(item.transform, false);
+        var checkRect = itemCheckmark.GetComponent<RectTransform>();
+        checkRect.anchorMin = new Vector2(0, 0.5f);
+        checkRect.anchorMax = new Vector2(0, 0.5f);
+        checkRect.sizeDelta = new Vector2(20, 20);
+        checkRect.anchoredPosition = new Vector2(10, 0);
+        
+        var checkImg = itemCheckmark.GetComponent<Image>();
+        checkImg.color = new Color(1f, 0.85f, 0.4f, 1f);
+        
+        // Item label
+        var itemLabel = new GameObject("Item Label", typeof(RectTransform), typeof(Text));
+        itemLabel.transform.SetParent(item.transform, false);
+        var labelRect = itemLabel.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(35, 2);
+        labelRect.offsetMax = new Vector2(-5, -2);
+        
+        var labelText = itemLabel.GetComponent<Text>();
+        labelText.font = GetDefaultFont();
+        labelText.color = new Color(1f, 0.95f, 0.8f, 1f);
+        labelText.fontSize = 16;
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        // Setup toggle references
+        itemToggle.graphic = itemCheckmark.GetComponent<Image>();
+        
+        // Setup ScrollRect
+        var scrollRect = template.GetComponent<ScrollRect>();
+        scrollRect.content = contentRect;
+        scrollRect.viewport = viewportRect;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        
+        // Assign template to dropdown
+        dropdown.template = templateRect;
+        dropdown.captionText = labelText;
+        dropdown.itemText = labelText;
+        
+        // Gold border for dropdown
+        var border = new GameObject("Border", typeof(Image));
+        border.transform.SetParent(dd.transform, false);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(1f, 0.85f, 0.4f, 0.5f);
+        var borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = new Vector2(2, 2); borderRect.offsetMax = new Vector2(-2, -2);
+        
+        dropdown.options.Clear();
+        foreach (var option in options)
+        {
+            dropdown.options.Add(new Dropdown.OptionData(option));
+        }
+        
+        return dropdown;
+    }
+    
+    static Dropdown CreateCompactMilitaryDropdown(Transform parent, string[] options, float width)
+    {
+        var dd = new GameObject("CompactDropdown", typeof(Image), typeof(Dropdown));
+        dd.transform.SetParent(parent, false);
+        var dropdown = dd.GetComponent<Dropdown>();
+        var ddImg = dd.GetComponent<Image>();
+        ddImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        var layout = dd.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        
+        // Create template (simplified for compact dropdown)
+        var template = new GameObject("Template", typeof(RectTransform), typeof(Image));
+        template.transform.SetParent(dd.transform, false);
+        template.SetActive(false);
+        
+        var templateImg = template.GetComponent<Image>();
+        templateImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        var templateRect = template.GetComponent<RectTransform>();
+        templateRect.anchorMin = new Vector2(0, 0);
+        templateRect.anchorMax = new Vector2(1, 0);
+        templateRect.anchoredPosition = new Vector2(0, 2);
+        templateRect.sizeDelta = new Vector2(0, 100);
+        
+        // Content
+        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        content.transform.SetParent(template.transform, false);
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = Vector2.zero;
+        contentRect.anchorMax = Vector2.one;
+        contentRect.sizeDelta = Vector2.zero;
+        
+        var contentVlg = content.GetComponent<VerticalLayoutGroup>();
+        contentVlg.spacing = 1;
+        
+        // Item template
+        var item = new GameObject("Item", typeof(RectTransform), typeof(Toggle), typeof(Image));
+        item.transform.SetParent(content.transform, false);
+        
+        var itemRect = item.GetComponent<RectTransform>();
+        itemRect.sizeDelta = new Vector2(0, 20);
+        
+        var itemToggle = item.GetComponent<Toggle>();
+        var itemImg = item.GetComponent<Image>();
+        itemImg.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+        
+        // Item label
+        var itemLabel = new GameObject("Item Label", typeof(Text));
+        itemLabel.transform.SetParent(item.transform, false);
+        var labelRect = itemLabel.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(5, 2);
+        labelRect.offsetMax = new Vector2(-5, -2);
+        
+        var labelText = itemLabel.GetComponent<Text>();
+        labelText.font = GetDefaultFont();
+        labelText.color = Color.white;
+        labelText.fontSize = 12;
+        labelText.alignment = TextAnchor.MiddleCenter;
+        
+        dropdown.template = templateRect;
+        dropdown.captionText = labelText;
+        dropdown.itemText = labelText;
+        
+        dropdown.options.Clear();
+        foreach (var option in options)
+        {
+            dropdown.options.Add(new Dropdown.OptionData(option));
+        }
+        
+        return dropdown;
+    }
+    
+    static GameObject CreateMilitaryLabel(Transform parent, string text, float width)
+    {
+        var label = new GameObject("MilitaryLabel", typeof(Text));
+        label.transform.SetParent(parent, false);
+        var labelText = label.GetComponent<Text>();
+        labelText.text = text;
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = 20;
+        labelText.fontStyle = FontStyle.Bold;
+        labelText.color = new Color(1f, 0.85f, 0.4f, 1f); // Gold
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        var layout = label.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        
+        return label;
+    }
+    
+    static Button CreateMobileColorButton(Transform parent, Color color)
+    {
+        var btn = new GameObject("ColorButton", typeof(Image), typeof(Button));
+        btn.transform.SetParent(parent, false);
+        var img = btn.GetComponent<Image>();
+        img.color = color;
+        
+        // Gold border
+        var border = new GameObject("Border", typeof(Image));
+        border.transform.SetParent(btn.transform, false);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(1f, 0.85f, 0.4f, 1f);
+        var borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = new Vector2(0, 0); borderRect.offsetMax = new Vector2(0, 0);
+        
+        var innerBorder = new GameObject("InnerBorder", typeof(Image));
+        innerBorder.transform.SetParent(border.transform, false);
+        var innerImg = innerBorder.GetComponent<Image>();
+        innerImg.color = color;
+        var innerRect = innerBorder.GetComponent<RectTransform>();
+        innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+        innerRect.offsetMin = new Vector2(3, 3); innerRect.offsetMax = new Vector2(-3, -3);
+        
+        var layout = btn.AddComponent<LayoutElement>();
+        layout.preferredWidth = 60;
+        
+        return btn.GetComponent<Button>();
+    }
+    
+    static Text CreateMilitaryText(Transform parent, string text)
+    {
+        var textObj = new GameObject("MilitaryText", typeof(Text));
+        textObj.transform.SetParent(parent, false);
+        var textComp = textObj.GetComponent<Text>();
+        textComp.text = text;
+        textComp.font = GetDefaultFont();
+        textComp.fontSize = 16;
+        textComp.color = new Color(0.9f, 0.9f, 0.8f, 1f); // Off-white
+        textComp.alignment = TextAnchor.MiddleLeft;
+        
+        var layout = textObj.AddComponent<LayoutElement>();
+        layout.preferredHeight = 40;
         
         return textComp;
     }
