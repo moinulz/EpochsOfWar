@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using EpochsOfWar.UI;
 
 public class SkirmishSetup : MonoBehaviour
 {

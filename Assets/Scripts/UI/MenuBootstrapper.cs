@@ -15,10 +15,6 @@ namespace EpochsOfWar.UI
         [SerializeField] private float matchWidthOrHeight = 0.5f;
         [SerializeField] private int fallbackDPI = 96;
         
-        [Header("Font Settings")]
-        [SerializeField] private string defaultFontName = "Arial";
-        [SerializeField] private int defaultFontSize = 16;
-        
         private Canvas canvas;
         private CanvasScaler canvasScaler;
         private static Font _defaultFont;
@@ -71,7 +67,7 @@ namespace EpochsOfWar.UI
         
         void EnsureEventSystem()
         {
-            var eventSystem = FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
+            var eventSystem = FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (eventSystem == null)
             {
                 var eventSystemGO = new GameObject("EventSystem");

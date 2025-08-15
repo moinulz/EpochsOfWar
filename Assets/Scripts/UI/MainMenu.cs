@@ -55,7 +55,7 @@ namespace EpochsOfWar.UI
             if (!closeSettingsButton) closeSettingsButton = FindButtonByName("CloseButton");
 
             // Auto-find scene loader
-            if (!sceneLoader) sceneLoader = FindObjectOfType<SceneLoader>();
+            if (!sceneLoader) sceneLoader = FindFirstObjectByType<SceneLoader>();
         }
 
         Button FindButtonByName(string buttonName)
@@ -184,7 +184,7 @@ namespace EpochsOfWar.UI
 
         void CreateBasicSettingsPanel()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = FindFirstObjectByType<Canvas>();
             if (!canvas) return;
 
             // Create settings panel

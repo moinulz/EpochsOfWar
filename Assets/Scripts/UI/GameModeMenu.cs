@@ -223,7 +223,7 @@ namespace EpochsOfWar.UI
         // Fallback panel creation methods in case panels are missing
         void CreateBasicCampaignPanel()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = FindFirstObjectByType<Canvas>();
             if (!canvas) return;
 
             campaignPanel = new GameObject("CampaignPanel", typeof(RectTransform), typeof(Image));
@@ -259,7 +259,7 @@ namespace EpochsOfWar.UI
 
         void CreateBasicSkirmishPanel()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = FindFirstObjectByType<Canvas>();
             if (!canvas) return;
 
             skirmishPanel = new GameObject("SkirmishPanel", typeof(RectTransform), typeof(Image));
@@ -310,7 +310,7 @@ namespace EpochsOfWar.UI
 
         void CreateBasicMultiplayerPanel()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = FindFirstObjectByType<Canvas>();
             if (!canvas) return;
 
             multiplayerPanel = new GameObject("MultiplayerPanel", typeof(RectTransform), typeof(Image));
