@@ -120,6 +120,14 @@ public class GameManager : MonoBehaviour
                 renderer.material = material;
             }
             
+            var unitSpawner = existingCapital.GetComponent<UnitSpawner>();
+            if (unitSpawner == null)
+            {
+                unitSpawner = existingCapital.AddComponent<UnitSpawner>();
+            }
+            unitSpawner.playerIndex = playerIndex;
+            unitSpawner.playerColor = playerSetup.playerColor;
+            
             playerCapitals[playerIndex] = existingCapital;
             
             if (playerSetup.playerType == PlayerType.Human)
@@ -140,6 +148,16 @@ public class GameManager : MonoBehaviour
             material.color = playerSetup.playerColor;
             capital.GetComponent<Renderer>().material = material;
             
+            var unitSpawner = capital.AddComponent<UnitSpawner>();
+            unitSpawner.playerIndex = playerIndex;
+            unitSpawner.playerColor = playerSetup.playerColor;
+            
+            // Create a spawn point child object
+            var spawnPointObj = new GameObject("SpawnPoint");
+            spawnPointObj.transform.SetParent(capital.transform);
+            spawnPointObj.transform.localPosition = Vector3.forward * 1.5f;
+            unitSpawner.spawnPoint = spawnPointObj.transform;
+            
             playerCapitals[playerIndex] = capital;
             
             // If this is the human player, set as the main capital for camera focus
@@ -149,7 +167,7 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        Debug.Log($"Created capital for Player {playerIndex + 1} ({playerSetup.playerType}) at {spawnPosition}");
+        Debug.Log($"Created capital with unit spawner for Player {playerIndex + 1} ({playerSetup.playerType}) at {spawnPosition}");
     }
     
     void Update()
