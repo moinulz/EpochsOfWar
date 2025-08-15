@@ -156,7 +156,7 @@ namespace EpochsOfWar.Editor
         
         static void EnsureCamera()
         {
-            var camera = Object.FindObjectOfType<Camera>();
+            var camera = Object.FindFirstObjectByType<Camera>();
             if (camera == null)
             {
                 var cameraGO = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
@@ -172,7 +172,7 @@ namespace EpochsOfWar.Editor
         
         static void EnsureEventSystem()
         {
-            var eventSystem = Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
+            var eventSystem = Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (eventSystem == null)
             {
                 var eventSystemGO = new GameObject("EventSystem");
