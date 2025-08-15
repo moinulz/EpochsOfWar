@@ -183,8 +183,53 @@
 - Test grid system with various building placement scenarios
 - Validate player setup configurations across different team arrangements
 
+### Current Status (August 15, 2025)
+✅ **Recently Completed:**
+- Fixed CS0111 compilation errors in CreateMainMenuScene.cs
+- Implemented basic unit spawning system with Worker and Soldier units
+- Added UnitSpawner component to capital buildings
+- Created placeholder unit system ready for Meshy AI model integration
+- Maintained mobile-friendly input system (keyboard/mouse + touch support)
+
+🔄 **Currently Playable:**
+- Basic skirmish matches with capital building placement
+- Unit spawning from capitals (W key = Worker, S key = Soldier, or click capital)
+- 4-player spawn point system with proper map layout
+- Mobile-friendly UI and input controls
+
+⏳ **Next Priority - Meshy AI Integration:**
+- Replace placeholder cube units with AI-generated 3D models
+- Implement proper unit animations and visual effects
+- Add unit selection and command system
+- Expand unit types and combat mechanics
+
+### Meshy AI Integration TODO
+**API Key:** `msy_y9U7g4TjHdYDQnkyrQcXUTi4nyBsVdY3rf3Z`
+
+**Steps to Replace Placeholder Units:**
+1. Generate 3D models using Meshy AI:
+   - Medieval Worker (low-poly, mobile-optimized)
+   - Medieval Soldier (armored, weapon-equipped)
+   - Additional unit types as needed
+
+2. Import models to Unity:
+   - Place .fbx files in `Assets/Prefabs/Units/`
+   - Create prefabs with Unit components attached
+   - Set up materials and textures for player colors
+
+3. Update UnitSpawner references:
+   - Assign real prefabs to `workerPrefab` and `soldierPrefab` fields
+   - Remove placeholder cube creation logic
+   - Test spawning with new models
+
+4. Enhance unit system:
+   - Add animations (idle, walk, attack)
+   - Implement unit selection UI
+   - Add movement commands and pathfinding
+   - Create combat system between units
+
 ---
 
-*Last Updated: August 13, 2025*  
-*Agent Status: All compilation errors resolved, ready for next development phase*  
-*Current Focus: Resource management system implementation*
+*Last Updated: August 15, 2025*  
+*Agent Status: Basic skirmish playable with unit spawning*  
+*Current Focus: Meshy AI model integration for visual polish*

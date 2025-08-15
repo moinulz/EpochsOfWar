@@ -46,164 +46,173 @@ public static class CreateMainMenuScene
         es.AddComponent<UnityEngine.EventSystems.EventSystem>();
         es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 
-        // --- Ensure there is a camera in the scene ---
-var camGO = new GameObject("Main Camera");
-var cam = camGO.AddComponent<Camera>();
-camGO.AddComponent<AudioListener>();
-camGO.tag = "MainCamera";
-// Good defaults for menu
-cam.clearFlags = CameraClearFlags.SolidColor;
-cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f, 1f);
-cam.orthographic = false;
-cam.transform.position = new Vector3(0f, 0f, -10f);
-cam.transform.rotation = Quaternion.identity;
+    // --- Ensure there is a camera in the scene ---
+    var camGO = new GameObject("Main Camera");
+    var cam = camGO.AddComponent<Camera>();
+    camGO.AddComponent<AudioListener>();
+    camGO.tag = "MainCamera";
+    // Good defaults for menu
+    cam.clearFlags = CameraClearFlags.SolidColor;
+    cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f, 1f);
+    cam.orthographic = false;
+    cam.transform.position = new Vector3(0f, 0f, -10f);
+    cam.transform.rotation = Quaternion.identity;
 
-        // Canvas
-        var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-    var canvas = canvasGO.GetComponent<Canvas>();
+    var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = canvasGO.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080, 1920); // Mobile portrait optimized        // Background panel with gradient
+        UIDesignSystem.SetupResponsiveCanvas(scaler);
+
+        // Background with modern gradient effect
         var bg = new GameObject("Background", typeof(Image));
         bg.transform.SetParent(canvasGO.transform, false);
         var bgRect = bg.GetComponent<RectTransform>();
-        bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
-        bgRect.offsetMin = Vector2.zero;  bgRect.offsetMax = Vector2.zero;
-        bg.GetComponent<Image>().color = new Color(0.02f, 0.05f, 0.08f, 1f); // Deep dark blue
+        bgRect.anchorMin = Vector2.zero; 
+        bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero;  
+        bgRect.offsetMax = Vector2.zero;
+        bg.GetComponent<Image>().color = UIDesignSystem.Colors.PrimaryDark;
 
-        // Title with modern styling
+        // Title with improved typography
         var title = new GameObject("Title", typeof(Text));
         title.transform.SetParent(canvasGO.transform, false);
         var titleTxt = title.GetComponent<Text>();
         titleTxt.text = "EPOCHS OF WAR";
         titleTxt.alignment = TextAnchor.MiddleCenter;
         titleTxt.font = GetDefaultFont();
-        titleTxt.fontSize = 84;
+        titleTxt.fontSize = UIDesignSystem.Typography.TitleLarge;
         titleTxt.fontStyle = FontStyle.Bold;
-        titleTxt.color = new Color(0.9f, 0.95f, 1f, 1f); // Slightly blue-tinted white
+        titleTxt.color = UIDesignSystem.Colors.AccentGoldLight;
+        
         var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0.5f, 1f);
-        titleRect.anchorMax = new Vector2(0.5f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.anchoredPosition = new Vector2(0, -150);
-        titleRect.sizeDelta = new Vector2(900, 160);
+        titleRect.anchorMin = new Vector2(0.5f, 0.8f);
+        titleRect.anchorMax = new Vector2(0.5f, 0.9f);
+        titleRect.pivot = new Vector2(0.5f, 0.5f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = new Vector2(800f, 100f);
 
-        // Button helper
-        Button MakeButton(Transform parent, string name, string label)
-        {
-            var go = new GameObject(name, typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            var img = go.GetComponent<Image>();
-            // Modern button styling with subtle gradient
-            img.color = new Color(0.1f, 0.15f, 0.25f, 0.9f);
-            var rect = go.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(600, 140);
+        var subtitle = new GameObject("Subtitle", typeof(Text));
+        subtitle.transform.SetParent(canvasGO.transform, false);
+        var subtitleTxt = subtitle.GetComponent<Text>();
+        subtitleTxt.text = "FORGE YOUR EMPIRE • COMMAND YOUR ARMIES • CONQUER THE AGES";
+        subtitleTxt.alignment = TextAnchor.MiddleCenter;
+        subtitleTxt.font = GetDefaultFont();
+        subtitleTxt.fontSize = UIDesignSystem.Typography.BodyMedium;
+        subtitleTxt.color = UIDesignSystem.Colors.TextSecondary;
+        
+        var subtitleRect = subtitle.GetComponent<RectTransform>();
+        subtitleRect.anchorMin = new Vector2(0.5f, 0.75f);
+        subtitleRect.anchorMax = new Vector2(0.5f, 0.8f);
+        subtitleRect.pivot = new Vector2(0.5f, 0.5f);
+        subtitleRect.anchoredPosition = Vector2.zero;
+        subtitleRect.sizeDelta = new Vector2(600f, 40f);
 
-            // Add subtle border effect
-            var border = new GameObject("Border", typeof(Image));
-            border.transform.SetParent(go.transform, false);
-            var borderImg = border.GetComponent<Image>();
-            borderImg.color = new Color(0.3f, 0.4f, 0.6f, 0.4f);
-            var borderRect = border.GetComponent<RectTransform>();
-            borderRect.anchorMin = Vector2.zero; borderRect.anchorMax = Vector2.one;
-            borderRect.offsetMin = new Vector2(2, 2); borderRect.offsetMax = new Vector2(-2, -2);
+        var buttonContainer = new GameObject("ButtonContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        buttonContainer.transform.SetParent(canvasGO.transform, false);
+        var containerRect = buttonContainer.GetComponent<RectTransform>();
+        containerRect.anchorMin = new Vector2(0.5f, 0.3f);
+        containerRect.anchorMax = new Vector2(0.5f, 0.7f);
+        containerRect.pivot = new Vector2(0.5f, 0.5f);
+        containerRect.anchoredPosition = Vector2.zero;
 
-            var textGO = new GameObject("Label", typeof(Text));
-            textGO.transform.SetParent(go.transform, false);
-            var t = textGO.GetComponent<Text>();
-            t.text = label;
-            t.alignment = TextAnchor.MiddleCenter;
-            t.font = GetDefaultFont();
-            t.color = new Color(0.9f, 0.9f, 1f, 1f);
-            t.fontSize = 48;
-            t.fontStyle = FontStyle.Bold;
-            var tr = textGO.GetComponent<RectTransform>();
-            tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
-            tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
+        var vlg = buttonContainer.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = UIDesignSystem.Spacing.Large;
+        vlg.childAlignment = TextAnchor.MiddleCenter;
+        vlg.childControlWidth = false;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = false;
+        vlg.childForceExpandHeight = false;
 
-            return go.GetComponent<Button>();
-        }
+        var fitter = buttonContainer.GetComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-    // Vertical button group with layout
-    var group = new GameObject("Buttons", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        group.transform.SetParent(canvasGO.transform, false);
-        var gRect = group.GetComponent<RectTransform>();
-    gRect.anchorMin = new Vector2(0.5f, 0.5f);
-    gRect.anchorMax = new Vector2(0.5f, 0.5f);
-        gRect.pivot = new Vector2(0.5f, 0.5f);
-    gRect.anchoredPosition = new Vector2(0, -80);
-    gRect.sizeDelta = new Vector2(700, 0);
+        // Create modern buttons
+        var playBtn = UIDesignSystem.ButtonFactory.CreatePrimaryButton(buttonContainer.transform, "PlayButton", "⚔ PLAY ⚔");
+        var settingsBtn = UIDesignSystem.ButtonFactory.CreateSecondaryButton(buttonContainer.transform, "SettingsButton", "⚙ SETTINGS");
+        var quitBtn = UIDesignSystem.ButtonFactory.CreateSecondaryButton(buttonContainer.transform, "QuitButton", "✕ QUIT");
 
-    var vlg = group.GetComponent<VerticalLayoutGroup>();
-    vlg.spacing = 24f;
-    vlg.childAlignment = TextAnchor.MiddleCenter;
-    vlg.childControlWidth = true;
-    vlg.childControlHeight = true;
-    vlg.childForceExpandWidth = false;
-    vlg.childForceExpandHeight = false;
-    vlg.padding = new RectOffset(0, 0, 0, 0);
-
-    var fitter = group.GetComponent<ContentSizeFitter>();
-    fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-    fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        var playBtn = MakeButton(group.transform, "PlayButton", "Play");
-        var settingsBtn = MakeButton(group.transform, "SettingsButton", "Settings");
-        var quitBtn = MakeButton(group.transform, "QuitButton", "Quit");
-
-        // Let VerticalLayoutGroup handle positioning; ensure consistent size
-        foreach (var b in new[] { playBtn, settingsBtn, quitBtn })
-        {
-            var br = b.GetComponent<RectTransform>();
-            br.sizeDelta = new Vector2(600, 120);
-        }
-
-        // Settings panel (hidden)
+        // Modern settings overlay
         var settingsPanel = new GameObject("SettingsPanel", typeof(Image));
         settingsPanel.transform.SetParent(canvasGO.transform, false);
         var spImg = settingsPanel.GetComponent<Image>();
-        spImg.color = new Color(0f, 0f, 0f, 0.66f);
+        spImg.color = new Color(0f, 0f, 0f, 0.8f);
         var spRect = settingsPanel.GetComponent<RectTransform>();
-        spRect.anchorMin = Vector2.zero; spRect.anchorMax = Vector2.one;
-        spRect.offsetMin = Vector2.zero; spRect.offsetMax = Vector2.zero;
+        spRect.anchorMin = Vector2.zero; 
+        spRect.anchorMax = Vector2.one;
+        spRect.offsetMin = Vector2.zero; 
+        spRect.offsetMax = Vector2.zero;
         settingsPanel.SetActive(false);
 
-        // Settings content: panel + controls
-        var panel = new GameObject("Panel", typeof(Image));
+        // Settings content panel
+        var panel = new GameObject("SettingsContent", typeof(Image));
         panel.transform.SetParent(settingsPanel.transform, false);
-        panel.GetComponent<Image>().color = new Color(0.12f, 0.18f, 0.25f, 1f);
+        panel.GetComponent<Image>().color = UIDesignSystem.Colors.SecondaryDark;
         var pRect = panel.GetComponent<RectTransform>();
-        pRect.anchorMin = new Vector2(0.5f, 0.5f);
-        pRect.anchorMax = new Vector2(0.5f, 0.5f);
-        pRect.sizeDelta = new Vector2(800, 900);
-        pRect.anchoredPosition = Vector2.zero;
+        pRect.anchorMin = new Vector2(0.2f, 0.2f);
+        pRect.anchorMax = new Vector2(0.8f, 0.8f);
+        pRect.offsetMin = Vector2.zero;
+        pRect.offsetMax = Vector2.zero;
+
+        // Settings border
+        var settingsBorder = new GameObject("Border", typeof(Image));
+        settingsBorder.transform.SetParent(panel.transform, false);
+        var borderImg = settingsBorder.GetComponent<Image>();
+        borderImg.color = UIDesignSystem.Colors.AccentGold;
+        var borderRect = settingsBorder.GetComponent<RectTransform>();
+        borderRect.anchorMin = Vector2.zero;
+        borderRect.anchorMax = Vector2.one;
+        borderRect.offsetMin = Vector2.zero;
+        borderRect.offsetMax = Vector2.zero;
+        
+        var innerPanel = new GameObject("InnerPanel", typeof(Image));
+        innerPanel.transform.SetParent(settingsBorder.transform, false);
+        var innerImg = innerPanel.GetComponent<Image>();
+        innerImg.color = UIDesignSystem.Colors.SecondaryDark;
+        var innerRect = innerPanel.GetComponent<RectTransform>();
+        innerRect.anchorMin = Vector2.zero;
+        innerRect.anchorMax = Vector2.one;
+        innerRect.offsetMin = new Vector2(4f, 4f);
+        innerRect.offsetMax = new Vector2(-4f, -4f);
+
+        // Settings content layout
+        var settingsContent = new GameObject("SettingsLayout", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        settingsContent.transform.SetParent(innerPanel.transform, false);
+        var contentRect = settingsContent.GetComponent<RectTransform>();
+        contentRect.anchorMin = Vector2.zero;
+        contentRect.anchorMax = Vector2.one;
+        contentRect.offsetMin = new Vector2(UIDesignSystem.Spacing.XLarge, UIDesignSystem.Spacing.XLarge);
+        contentRect.offsetMax = new Vector2(-UIDesignSystem.Spacing.XLarge, -UIDesignSystem.Spacing.XLarge);
+        
+        var settingsVlg = settingsContent.GetComponent<VerticalLayoutGroup>();
+        settingsVlg.spacing = UIDesignSystem.Spacing.Large;
+        settingsVlg.childControlWidth = true;
+        settingsVlg.childControlHeight = false;
+        settingsVlg.childForceExpandWidth = true;
 
         // Settings title
         var settingsTitle = new GameObject("SettingsTitle", typeof(Text));
-        settingsTitle.transform.SetParent(panel.transform, false);
+        settingsTitle.transform.SetParent(settingsContent.transform, false);
         var stText = settingsTitle.GetComponent<Text>();
-        stText.text = "Settings";
+        stText.text = "⚙ SETTINGS ⚙";
         stText.alignment = TextAnchor.MiddleCenter;
-    stText.font = GetDefaultFont();
-        stText.fontSize = 48;
-        stText.color = Color.white;
-        var stRect = settingsTitle.GetComponent<RectTransform>();
-        stRect.sizeDelta = new Vector2(700, 80);
-        stRect.anchoredPosition = new Vector2(0, 380);
+        stText.font = GetDefaultFont();
+        stText.fontSize = UIDesignSystem.Typography.TitleMedium;
+        stText.fontStyle = FontStyle.Bold;
+        stText.color = UIDesignSystem.Colors.AccentGoldLight;
+        var stLayout = settingsTitle.AddComponent<LayoutElement>();
+        stLayout.preferredHeight = 60f;
 
-        // Quality dropdown
-        Dropdown qualityDropdown = MakeLabeledDropdown(panel.transform, "Graphics Quality", new Vector2(0, 200));
-        // Music slider
-        Slider musicSlider = MakeLabeledSlider(panel.transform, "Music Volume", new Vector2(0, 40), 0f, 1f, 0.5f);
-        // Vibration toggle
-        Toggle vibToggle = MakeLabeledToggle(panel.transform, "Vibration (Mobile)", new Vector2(0, -120), true);
+        // Settings controls with improved styling
+        var qualityDropdown = UIDesignSystem.CreateStyledSettingsDropdown(settingsContent.transform, "Graphics Quality", new[] { "Low", "Medium", "High", "Ultra" });
+        var musicSlider = UIDesignSystem.CreateStyledSettingsSlider(settingsContent.transform, "Music Volume", 0f, 1f, 0.5f);
+        var vibToggle = UIDesignSystem.CreateStyledSettingsToggle(settingsContent.transform, "Vibration (Mobile)", true);
 
         // Close button
-        var closeBtn = MakeButton(panel.transform, "CloseButton", "Close");
-        closeBtn.transform.localPosition = new Vector3(0, -350, 0);
-        var closeBtnRect = closeBtn.GetComponent<RectTransform>();
-        closeBtnRect.sizeDelta = new Vector2(400, 100);
+        var closeBtn = UIDesignSystem.ButtonFactory.CreateSecondaryButton(settingsContent.transform, "CloseButton", "✕ CLOSE");
+        var closeBtnLayout = closeBtn.gameObject.AddComponent<LayoutElement>();
+        closeBtnLayout.preferredHeight = 60f;
+        closeBtnLayout.preferredWidth = 200f;
 
         // Loading overlay
         var loading = new GameObject("LoadingOverlay", typeof(CanvasGroup));
@@ -647,60 +656,83 @@ cam.transform.rotation = Quaternion.identity;
     es.AddComponent<UnityEngine.EventSystems.EventSystem>();
     es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         
-        // Create Canvas
         var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvasComp = canvasGO.GetComponent<Canvas>();
         canvasComp.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080, 1920);
+        UIDesignSystem.SetupResponsiveCanvas(scaler);
         
-        // Background with modern dark theme
+        // Background
         var bg = new GameObject("Background", typeof(Image));
         bg.transform.SetParent(canvasGO.transform, false);
         var bgImage = bg.GetComponent<Image>();
-        bgImage.color = new Color(0.02f, 0.05f, 0.08f, 1f);
+        bgImage.color = UIDesignSystem.Colors.PrimaryDark;
         var bgRect = bg.GetComponent<RectTransform>();
-        bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
-        bgRect.offsetMin = Vector2.zero; bgRect.offsetMax = Vector2.zero;
+        bgRect.anchorMin = Vector2.zero; 
+        bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero; 
+        bgRect.offsetMax = Vector2.zero;
+        
+        // Header section
+        var header = new GameObject("Header", typeof(RectTransform));
+        header.transform.SetParent(canvasGO.transform, false);
+        var headerRect = header.GetComponent<RectTransform>();
+        headerRect.anchorMin = new Vector2(0f, 0.8f);
+        headerRect.anchorMax = new Vector2(1f, 1f);
+        headerRect.offsetMin = Vector2.zero;
+        headerRect.offsetMax = Vector2.zero;
         
         // Title
         var title = new GameObject("Title", typeof(Text));
-        title.transform.SetParent(canvasGO.transform, false);
+        title.transform.SetParent(header.transform, false);
         var titleText = title.GetComponent<Text>();
-        titleText.text = "SELECT GAME MODE";
-    titleText.font = GetDefaultFont();
-        titleText.fontSize = 60;
-        titleText.color = Color.white;
+        titleText.text = "⚔ SELECT GAME MODE ⚔";
+        titleText.font = GetDefaultFont();
+        titleText.fontSize = UIDesignSystem.Typography.TitleMedium;
+        titleText.fontStyle = FontStyle.Bold;
+        titleText.color = UIDesignSystem.Colors.AccentGoldLight;
         titleText.alignment = TextAnchor.MiddleCenter;
         var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0, 0.8f);
-        titleRect.anchorMax = new Vector2(1, 1);
-        titleRect.offsetMin = Vector2.zero; titleRect.offsetMax = Vector2.zero;
+        titleRect.anchorMin = Vector2.zero;
+        titleRect.anchorMax = Vector2.one;
+        titleRect.offsetMin = Vector2.zero;
+        titleRect.offsetMax = Vector2.zero;
         
-        // Create main buttons
-        var buttonGroup = new GameObject("ButtonGroup", typeof(RectTransform));
-        buttonGroup.transform.SetParent(canvasGO.transform, false);
-        var groupRect = buttonGroup.GetComponent<RectTransform>();
-        groupRect.anchorMin = new Vector2(0.2f, 0.3f);
-        groupRect.anchorMax = new Vector2(0.8f, 0.7f);
-        groupRect.offsetMin = Vector2.zero; groupRect.offsetMax = Vector2.zero;
+        var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(canvasGO.transform, false);
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.2f, 0.2f);
+        contentRect.anchorMax = new Vector2(0.8f, 0.75f);
+        contentRect.offsetMin = Vector2.zero;
+        contentRect.offsetMax = Vector2.zero;
         
-        // Campaign button
-        var campaignBtn = MakeButton(buttonGroup.transform, "CampaignButton", "CAMPAIGN");
-        SetButtonPosition(campaignBtn, new Vector2(0, 0.75f), new Vector2(400, 80));
+        var contentVlg = content.GetComponent<VerticalLayoutGroup>();
+        contentVlg.spacing = UIDesignSystem.Spacing.XLarge;
+        contentVlg.childAlignment = TextAnchor.MiddleCenter;
+        contentVlg.childControlWidth = false;
+        contentVlg.childControlHeight = false;
+        contentVlg.padding = new RectOffset(0, 0, (int)UIDesignSystem.Spacing.XLarge, 0);
         
-        // Skirmish button
-        var skirmishBtn = MakeButton(buttonGroup.transform, "SkirmishButton", "SKIRMISH");
-        SetButtonPosition(skirmishBtn, new Vector2(0, 0.5f), new Vector2(400, 80));
+        // Create game mode buttons with descriptions
+        var campaignBtn = UIDesignSystem.ButtonFactory.CreateGameModeButton(content.transform, "CampaignButton", "🏰 CAMPAIGN", "Embark on epic single-player missions", UIDesignSystem.Colors.ButtonPrimary);
+        var skirmishBtn = UIDesignSystem.ButtonFactory.CreateGameModeButton(content.transform, "SkirmishButton", "⚔ SKIRMISH", "Battle against AI opponents", UIDesignSystem.Colors.ButtonSuccess);
+        var multiplayerBtn = UIDesignSystem.ButtonFactory.CreateGameModeButton(content.transform, "MultiplayerButton", "🌐 MULTIPLAYER", "Fight other players online", UIDesignSystem.Colors.ButtonSecondary);
         
-        // Multiplayer button
-        var multiplayerBtn = MakeButton(buttonGroup.transform, "MultiplayerButton", "MULTIPLAYER");
-        SetButtonPosition(multiplayerBtn, new Vector2(0, 0.25f), new Vector2(400, 80));
+        // Back button in bottom area
+        var bottomArea = new GameObject("BottomArea", typeof(RectTransform));
+        bottomArea.transform.SetParent(canvasGO.transform, false);
+        var bottomRect = bottomArea.GetComponent<RectTransform>();
+        bottomRect.anchorMin = new Vector2(0f, 0f);
+        bottomRect.anchorMax = new Vector2(1f, 0.15f);
+        bottomRect.offsetMin = Vector2.zero;
+        bottomRect.offsetMax = Vector2.zero;
         
-        // Back button
-        var backBtn = MakeButton(buttonGroup.transform, "BackButton", "BACK TO MAIN MENU");
-        SetButtonPosition(backBtn, new Vector2(0, 0f), new Vector2(400, 80));
+        var backBtn = UIDesignSystem.ButtonFactory.CreateSecondaryButton(bottomArea.transform, "BackButton", "← BACK TO MAIN MENU");
+        var backBtnRect = backBtn.GetComponent<RectTransform>();
+        backBtnRect.anchorMin = new Vector2(0.1f, 0.3f);
+        backBtnRect.anchorMax = new Vector2(0.4f, 0.7f);
+        backBtnRect.offsetMin = Vector2.zero;
+        backBtnRect.offsetMax = Vector2.zero;
         
         // Create panels for each mode (initially hidden)
         var campaignPanel = CreatePanel(canvasGO.transform, "CampaignPanel", false);
@@ -793,131 +825,68 @@ cam.transform.rotation = Quaternion.identity;
     
     static void CreateSkirmishUI(Transform parent)
     {
-        // Scrollable area (content)
-        var scrollGO = new GameObject("SkirmishScroll", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
+        var scrollGO = new GameObject("SkirmishScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
         scrollGO.transform.SetParent(parent, false);
+        var scrollRect = scrollGO.GetComponent<ScrollRect>();
         var scrollImg = scrollGO.GetComponent<Image>();
-        scrollImg.color = new Color(0.02f, 0.05f, 0.08f, 0.9f);
-        var svRect = scrollGO.GetComponent<RectTransform>();
-        svRect.anchorMin = new Vector2(0f, 0.18f); // leave space for bottom action bar
-        svRect.anchorMax = new Vector2(1f, 1f);
-        svRect.offsetMin = Vector2.zero; svRect.offsetMax = Vector2.zero;
+        scrollImg.color = UIDesignSystem.Colors.SecondaryDark;
+        
+        var scrollRectTransform = scrollGO.GetComponent<RectTransform>();
+        scrollRectTransform.anchorMin = new Vector2(0f, 0.15f);
+        scrollRectTransform.anchorMax = new Vector2(1f, 1f);
+        scrollRectTransform.offsetMin = Vector2.zero;
+        scrollRectTransform.offsetMax = Vector2.zero;
 
+        // Viewport
         var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
         viewport.transform.SetParent(scrollGO.transform, false);
         var viewportRect = viewport.GetComponent<RectTransform>();
-        viewportRect.anchorMin = Vector2.zero; viewportRect.anchorMax = Vector2.one;
-        viewportRect.offsetMin = Vector2.zero; viewportRect.offsetMax = Vector2.zero;
+        viewportRect.anchorMin = Vector2.zero;
+        viewportRect.anchorMax = Vector2.one;
+        viewportRect.offsetMin = Vector2.zero;
+        viewportRect.offsetMax = Vector2.zero;
         viewport.GetComponent<Image>().color = Color.clear;
 
-        var container = new GameObject("SkirmishContent", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        // Content container
+        var container = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         container.transform.SetParent(viewport.transform, false);
         var containerRect = container.GetComponent<RectTransform>();
-        containerRect.anchorMin = new Vector2(0, 1); containerRect.anchorMax = new Vector2(1, 1);
+        containerRect.anchorMin = new Vector2(0f, 1f);
+        containerRect.anchorMax = new Vector2(1f, 1f);
         containerRect.pivot = new Vector2(0.5f, 1f);
         containerRect.anchoredPosition = Vector2.zero;
 
-        var vlg = container.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 20f;
-        vlg.padding = new RectOffset(24, 24, 24, 24);
-        vlg.childControlWidth = true; vlg.childControlHeight = false; vlg.childForceExpandWidth = true;
-        container.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var contentVlg = container.GetComponent<VerticalLayoutGroup>();
+        contentVlg.spacing = UIDesignSystem.Spacing.Large;
+        contentVlg.padding = new RectOffset(
+            (int)UIDesignSystem.Spacing.Large, 
+            (int)UIDesignSystem.Spacing.Large, 
+            (int)UIDesignSystem.Spacing.Large, 
+            (int)UIDesignSystem.Spacing.Large
+        );
+        contentVlg.childControlWidth = true;
+        contentVlg.childControlHeight = false;
+        contentVlg.childForceExpandWidth = true;
 
-        var scroll = scrollGO.GetComponent<ScrollRect>();
-        scroll.viewport = viewportRect;
-        scroll.content = containerRect;
-        scroll.horizontal = false; scroll.vertical = true;
+        var contentFitter = container.GetComponent<ContentSizeFitter>();
+        contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        // Title
-        var title = new GameObject("Title", typeof(Text));
-        title.transform.SetParent(container.transform, false);
-        var titleText = title.GetComponent<Text>();
-        titleText.text = "⚔ SKIRMISH SETUP ⚔";
-        titleText.font = GetDefaultFont();
-        titleText.fontSize = 36;
-        titleText.fontStyle = FontStyle.Bold;
-        titleText.color = new Color(1f, 0.85f, 0.4f, 1f);
-        titleText.alignment = TextAnchor.MiddleCenter;
-        var titleLayout = title.AddComponent<LayoutElement>();
-        titleLayout.preferredHeight = 60;
+        scrollRect.viewport = viewportRect;
+        scrollRect.content = containerRect;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
 
-        // Map Selection Section
-        CreateMapSelectionSection(container.transform);
+        CreateSkirmishTitle(container.transform);
+        
+        CreateMobileMapSelection(container.transform);
+        
+        // Player setup section
+        CreateMobilePlayerSetup(container.transform);
 
-        // Player Table Header
-        CreatePlayerTableHeader(container.transform);
-
-        // Player rows container
-        var playersContainer = new GameObject("PlayersContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        playersContainer.transform.SetParent(container.transform, false);
-        var playersVlg = playersContainer.GetComponent<VerticalLayoutGroup>();
-        playersVlg.spacing = 5f;
-        playersVlg.childControlWidth = true;
-        playersVlg.childControlHeight = false;
-        playersVlg.childForceExpandWidth = true;
-        playersContainer.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        // Create player rows (Player + 3 AI max for 4 total)
-        CreateMobilePlayerRow(playersContainer.transform, "Player", "Human", 1000, 1000, 1000, 1000, "None", false);
-        CreateMobilePlayerRow(playersContainer.transform, "Computer1", "Easy", 1000, 1000, 1000, 1000, "Team1", true);
-        CreateMobilePlayerRow(playersContainer.transform, "Computer2", "Medium", 1000, 1000, 1000, 1000, "Team1", true);
-        CreateMobilePlayerRow(playersContainer.transform, "Computer3", "Hard", 1000, 1000, 1000, 1000, "None", true);
-
-        // Starting Resources summary bar (visible labels + quantities)
-        var resBar = new GameObject("StartingResourcesBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
-        resBar.transform.SetParent(container.transform, false);
-        var resImg = resBar.GetComponent<Image>();
-        resImg.color = new Color(0.12f, 0.10f, 0.08f, 0.9f);
-        var resHlg = resBar.GetComponent<HorizontalLayoutGroup>();
-        resHlg.spacing = 12f; resHlg.padding = new RectOffset(16,16,10,10);
-        resHlg.childControlWidth = false; resHlg.childForceExpandWidth = false;
-
-        void AddRes(string name, int amount)
-        {
-            var group = new GameObject($"{name}Group", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            group.transform.SetParent(resBar.transform, false);
-            var gH = group.GetComponent<HorizontalLayoutGroup>(); gH.spacing = 6f; gH.childControlWidth = false;
-            var label = new GameObject($"{name}Label", typeof(Text)); label.transform.SetParent(group.transform, false);
-            var lt = label.GetComponent<Text>(); lt.font = GetDefaultFont(); lt.text = name + ":"; lt.fontSize = 16; lt.color = new Color(1f,0.85f,0.4f,1f);
-            var value = new GameObject($"{name}Value", typeof(Text)); value.transform.SetParent(group.transform, false);
-            var vt = value.GetComponent<Text>(); vt.font = GetDefaultFont(); vt.text = amount.ToString(); vt.fontSize = 16; vt.color = Color.white;
-        }
-        AddRes("Wood", 1000); AddRes("Stone", 1000); AddRes("Iron", 1000); AddRes("Gold", 1000);
-
-        // Add Computer Button
-        var addComputerBtn = CreateMilitaryButton(container.transform, "AddComputerButton", "+ ADD COMPUTER", new Color(0.2f, 0.4f, 0.2f, 1f));
-        addComputerBtn.gameObject.AddComponent<LayoutElement>().preferredHeight = 60;
-
-        // Bottom Action Bar (always visible)
-        var actionBar = new GameObject("ActionBar", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
-        actionBar.transform.SetParent(parent, false);
-        var barRect = actionBar.GetComponent<RectTransform>();
-        barRect.anchorMin = new Vector2(0f, 0f); barRect.anchorMax = new Vector2(1f, 0.16f);
-        barRect.offsetMin = Vector2.zero; barRect.offsetMax = Vector2.zero;
-        var barImg = actionBar.GetComponent<Image>();
-        barImg.color = new Color(0.08f, 0.06f, 0.03f, 0.98f);
-        var barHlg = actionBar.GetComponent<HorizontalLayoutGroup>();
-        barHlg.spacing = 20f; barHlg.padding = new RectOffset(24,24,16,16);
-        barHlg.childControlWidth = true; barHlg.childForceExpandWidth = true;
-
-        // Back Button (left)
-        var backBtn = CreateMilitaryButton(actionBar.transform, "SkirmishBackButton", "BACK", new Color(0.4f, 0.35f, 0.25f, 1f));
-        backBtn.gameObject.AddComponent<LayoutElement>().preferredWidth = 220;
-        // Start Game (fills remaining)
-        var startBtn = CreateMilitaryButton(actionBar.transform, "StartGameButton", "⚔ START BATTLE ⚔", new Color(0.6f, 0.15f, 0.1f, 1f));
-        var startLayout = startBtn.gameObject.AddComponent<LayoutElement>();
-        startLayout.flexibleWidth = 1f;
-
-        // Wire up back button
-        backBtn.onClick.AddListener(() => {
-            var canvas = parent.root.gameObject;
-            var gameModeMenu = canvas.GetComponent<GameModeMenu>();
-            if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
-        });
+        CreateSkirmishActionBar(parent);
 
         // Hook to SkirmishSetup
         var skirmishSetup = scrollGO.AddComponent<SkirmishSetup>();
-        skirmishSetup.startGameButton = startBtn; skirmishSetup.backButton = backBtn;
     }
     
     static void CreateMapSelectionSection(Transform parent)
@@ -1927,6 +1896,156 @@ cam.transform.rotation = Quaternion.identity;
         layout.preferredHeight = 40;
         
         return textComp;
+    }
+
+    static void CreateSkirmishTitle(Transform parent)
+    {
+        var titleContainer = new GameObject("TitleContainer", typeof(RectTransform), typeof(LayoutElement));
+        titleContainer.transform.SetParent(parent, false);
+        var titleLayout = titleContainer.GetComponent<LayoutElement>();
+        titleLayout.preferredHeight = 80f;
+        
+        var title = new GameObject("Title", typeof(Text));
+        title.transform.SetParent(titleContainer.transform, false);
+        var titleText = title.GetComponent<Text>();
+        titleText.text = "⚔ SKIRMISH SETUP ⚔";
+        titleText.font = GetDefaultFont();
+        titleText.fontSize = UIDesignSystem.Typography.TitleMedium;
+        titleText.fontStyle = FontStyle.Bold;
+        titleText.color = UIDesignSystem.Colors.AccentGoldLight;
+        titleText.alignment = TextAnchor.MiddleCenter;
+        
+        var titleRect = title.GetComponent<RectTransform>();
+        titleRect.anchorMin = Vector2.zero;
+        titleRect.anchorMax = Vector2.one;
+        titleRect.offsetMin = Vector2.zero;
+        titleRect.offsetMax = Vector2.zero;
+    }
+
+    static void CreateMobileMapSelection(Transform parent)
+    {
+        var section = UIDesignSystem.CreateSection(parent, "Map Selection");
+        
+        var mapRow = new GameObject("MapRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        mapRow.transform.SetParent(section.transform, false);
+        var mapHlg = mapRow.GetComponent<HorizontalLayoutGroup>();
+        mapHlg.spacing = UIDesignSystem.Spacing.Medium;
+        mapHlg.childControlWidth = false;
+        mapHlg.childControlHeight = true;
+        mapHlg.childForceExpandWidth = false;
+        
+        var mapRowLayout = mapRow.AddComponent<LayoutElement>();
+        mapRowLayout.preferredHeight = 60f;
+        
+        var mapLabel = new GameObject("MapLabel", typeof(Text));
+        mapLabel.transform.SetParent(mapRow.transform, false);
+        var labelText = mapLabel.GetComponent<Text>();
+        labelText.text = "Map:";
+        labelText.font = GetDefaultFont();
+        labelText.fontSize = UIDesignSystem.Typography.BodyLarge;
+        labelText.fontStyle = FontStyle.Bold;
+        labelText.color = UIDesignSystem.Colors.AccentGoldLight;
+        labelText.alignment = TextAnchor.MiddleLeft;
+        
+        var labelLayout = mapLabel.AddComponent<LayoutElement>();
+        labelLayout.preferredWidth = 100f;
+        
+        var mapDropdown = UIDesignSystem.CreateMobileDropdown(mapRow.transform, new[] { 
+            "Valley Forge (4 Players)", 
+            "Highland Clash (4 Players)", 
+            "Desert Storm (4 Players)" 
+        });
+        var dropdownLayout = mapDropdown.gameObject.AddComponent<LayoutElement>();
+        dropdownLayout.flexibleWidth = 1f;
+        dropdownLayout.preferredHeight = 50f;
+    }
+
+    static void CreateMobilePlayerSetup(Transform parent)
+    {
+        var section = UIDesignSystem.CreateSection(parent, "Player Setup");
+        
+        for (int i = 0; i < 4; i++)
+        {
+            CreateMobilePlayerRow(section.transform, i);
+        }
+        
+        var resourcesSection = UIDesignSystem.CreateSection(parent, "Starting Resources");
+        CreateResourcesSummary(resourcesSection.transform);
+    }
+
+    static void CreateResourcesSummary(Transform parent)
+    {
+        var resBar = new GameObject("StartingResourcesBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        resBar.transform.SetParent(parent, false);
+        var resImg = resBar.GetComponent<Image>();
+        resImg.color = new Color(0.12f, 0.10f, 0.08f, 0.9f);
+        var resHlg = resBar.GetComponent<HorizontalLayoutGroup>();
+        resHlg.spacing = UIDesignSystem.Spacing.Medium;
+        resHlg.padding = new RectOffset((int)UIDesignSystem.Spacing.Medium, (int)UIDesignSystem.Spacing.Medium, (int)UIDesignSystem.Spacing.Small, (int)UIDesignSystem.Spacing.Small);
+        resHlg.childControlWidth = false;
+        resHlg.childForceExpandWidth = false;
+
+        void AddRes(string name, int amount)
+        {
+            var group = new GameObject($"{name}Group", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            group.transform.SetParent(resBar.transform, false);
+            var gH = group.GetComponent<HorizontalLayoutGroup>();
+            gH.spacing = UIDesignSystem.Spacing.XSmall;
+            gH.childControlWidth = false;
+            
+            var label = new GameObject($"{name}Label", typeof(Text));
+            label.transform.SetParent(group.transform, false);
+            var lt = label.GetComponent<Text>();
+            lt.font = GetDefaultFont();
+            lt.text = name + ":";
+            lt.fontSize = UIDesignSystem.Typography.BodyMedium;
+            lt.color = UIDesignSystem.Colors.AccentGoldLight;
+            
+            var value = new GameObject($"{name}Value", typeof(Text));
+            value.transform.SetParent(group.transform, false);
+            var vt = value.GetComponent<Text>();
+            vt.font = GetDefaultFont();
+            vt.text = amount.ToString();
+            vt.fontSize = UIDesignSystem.Typography.BodyMedium;
+            vt.color = UIDesignSystem.Colors.TextPrimary;
+        }
+        
+        AddRes("Wood", 1000);
+        AddRes("Stone", 1000);
+        AddRes("Iron", 1000);
+        AddRes("Gold", 1000);
+    }
+
+    static void CreateSkirmishActionBar(Transform parent)
+    {
+        var actionBar = new GameObject("ActionBar", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+        actionBar.transform.SetParent(parent, false);
+        var barRect = actionBar.GetComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0f, 0f);
+        barRect.anchorMax = new Vector2(1f, 0.15f);
+        barRect.offsetMin = Vector2.zero;
+        barRect.offsetMax = Vector2.zero;
+        var barImg = actionBar.GetComponent<Image>();
+        barImg.color = new Color(0.08f, 0.06f, 0.03f, 0.98f);
+        var barHlg = actionBar.GetComponent<HorizontalLayoutGroup>();
+        barHlg.spacing = UIDesignSystem.Spacing.Large;
+        barHlg.padding = new RectOffset((int)UIDesignSystem.Spacing.Large, (int)UIDesignSystem.Spacing.Large, (int)UIDesignSystem.Spacing.Medium, (int)UIDesignSystem.Spacing.Medium);
+        barHlg.childControlWidth = true;
+        barHlg.childForceExpandWidth = true;
+
+        var backBtn = UIDesignSystem.ButtonFactory.CreateSecondaryButton(actionBar.transform, "SkirmishBackButton", "← BACK");
+        var backBtnLayout = backBtn.gameObject.AddComponent<LayoutElement>();
+        backBtnLayout.preferredWidth = 220f;
+        
+        var startBtn = CreateMilitaryButton(actionBar.transform, "StartGameButton", "⚔ START BATTLE ⚔", UIDesignSystem.Colors.ButtonDanger);
+        var startLayout = startBtn.gameObject.AddComponent<LayoutElement>();
+        startLayout.flexibleWidth = 1f;
+
+        backBtn.onClick.AddListener(() => {
+            var canvas = parent.root.gameObject;
+            var gameModeMenu = canvas.GetComponent<GameModeMenu>();
+            if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
+        });
     }
 
     // Returns a reliable default font for editor-time UI building in Unity 6+
