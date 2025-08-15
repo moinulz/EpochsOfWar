@@ -137,10 +137,7 @@ namespace EpochsOfWar.UI
             };
             
             // Store settings for the game scene
-            if (GameSettingsManager.Instance != null)
-            {
-                GameSettingsManager.CurrentGameSettings = gameSettings;
-            }
+            GameSettingsManager.CurrentGameSettings = gameSettings;
             
             LoadScene("Game");
         }
@@ -281,6 +278,5 @@ namespace EpochsOfWar.UI
     public static class GameSettingsManager
     {
         public static GameSettings CurrentGameSettings { get; set; }
-        public static GameSettingsManager Instance => null; // For compatibility
     }
 }
