@@ -15,18 +15,33 @@ public class BuildingPlacer : MonoBehaviour
     private Camera playerCamera;
     private bool isPlacementMode = false;
     
+    private Material validPreviewMaterial;
+    private Material invalidPreviewMaterial;
+    
     void Start()
     {
         playerCamera = Camera.main;
         if (terrainManager == null)
             terrainManager = FindFirstObjectByType<TerrainManager>();
             
-        // Create preview material if not assigned
+        // Create and cache preview materials
+        CreatePreviewMaterials();
+    }
+    
+    void CreatePreviewMaterials()
+    {
         if (previewMaterial == null)
         {
             previewMaterial = new Material(Shader.Find("Standard"));
             previewMaterial.color = new Color(0, 1, 0, 0.5f); // Semi-transparent green
         }
+        
+        // Create cached materials for valid and invalid placement
+        validPreviewMaterial = new Material(previewMaterial);
+        validPreviewMaterial.color = new Color(0, 1, 0, 0.5f); // Green
+        
+        invalidPreviewMaterial = new Material(previewMaterial);
+        invalidPreviewMaterial.color = new Color(1, 0, 0, 0.5f); // Red
     }
     
     void Update()
@@ -88,9 +103,7 @@ public class BuildingPlacer : MonoBehaviour
             var renderer = previewBuilding.GetComponent<Renderer>();
             if (renderer != null)
             {
-                var material = new Material(previewMaterial);
-                material.color = previewColor;
-                renderer.material = material;
+                renderer.material = canPlace ? validPreviewMaterial : invalidPreviewMaterial;
             }
         }
     }
@@ -177,5 +190,13 @@ public class BuildingPlacer : MonoBehaviour
             CancelPlacement();
             StartPlacement();
         }
+    }
+    
+    void OnDestroy()
+    {
+        if (validPreviewMaterial != null)
+            DestroyImmediate(validPreviewMaterial);
+        if (invalidPreviewMaterial != null)
+            DestroyImmediate(invalidPreviewMaterial);
     }
 }
