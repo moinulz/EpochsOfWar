@@ -122,7 +122,7 @@ public class SelectionManager : MonoBehaviour
     
     void SelectUnitsInBox()
     {
-        var allUnits = FindObjectsOfType<Unit>();
+        var allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
         foreach (var unit in allUnits)
         {
             Vector3 screenPos = playerCamera.WorldToScreenPoint(unit.transform.position);

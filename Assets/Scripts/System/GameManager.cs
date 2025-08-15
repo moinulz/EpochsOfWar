@@ -199,7 +199,7 @@ public class GameManager : MonoBehaviour
             var selectionManager = gameCamera.GetComponent<SelectionManager>();
             if (selectionManager == null)
             {
-                selectionManager = gameCamera.AddComponent<SelectionManager>();
+                selectionManager = gameCamera.gameObject.AddComponent<SelectionManager>();
             }
         }
         

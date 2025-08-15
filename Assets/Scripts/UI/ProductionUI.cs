@@ -81,7 +81,7 @@ public class ProductionUI : MonoBehaviour
         titleObj.transform.SetParent(transform, false);
         titleText = titleObj.AddComponent<Text>();
         titleText.text = "Production";
-        titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        titleText.font = Font.CreateDynamicFontFromOSFont("Arial", 18);
         titleText.fontSize = 18;
         titleText.color = Color.white;
         titleText.alignment = TextAnchor.MiddleCenter;
@@ -103,7 +103,7 @@ public class ProductionUI : MonoBehaviour
         resourcesObj.transform.SetParent(transform, false);
         resourcesText = resourcesObj.AddComponent<Text>();
         resourcesText.text = "Resources: Loading...";
-        resourcesText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        resourcesText.font = Font.CreateDynamicFontFromOSFont("Arial", 12);
         resourcesText.fontSize = 12;
         resourcesText.color = Color.yellow;
         resourcesText.alignment = TextAnchor.MiddleCenter;
@@ -128,7 +128,7 @@ public class ProductionUI : MonoBehaviour
         textObj.transform.SetParent(buttonObj.transform, false);
         var buttonText = textObj.AddComponent<Text>();
         buttonText.text = text;
-        buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        buttonText.font = Font.CreateDynamicFontFromOSFont("Arial", 14);
         buttonText.fontSize = 14;
         buttonText.color = Color.white;
         buttonText.alignment = TextAnchor.MiddleCenter;
