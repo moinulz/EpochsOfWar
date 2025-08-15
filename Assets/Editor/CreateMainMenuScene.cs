@@ -1256,18 +1256,6 @@ cam.transform.rotation = Quaternion.identity;
         CreateResourceMini(row.transform, "Gold", "1000");
     }
     
-    static Color GetPlayerColor(int index)
-    {
-        Color[] colors = {
-            new Color(0.2f, 0.6f, 1f, 1f),    // Blue
-            new Color(1f, 0.3f, 0.3f, 1f),    // Red  
-            new Color(0.3f, 0.8f, 0.3f, 1f),  // Green
-            new Color(1f, 0.8f, 0.2f, 1f),    // Yellow
-            new Color(0.8f, 0.3f, 0.8f, 1f),  // Purple
-            new Color(1f, 0.5f, 0.1f, 1f),    // Orange
-        };
-        return colors[index % colors.Length];
-    }
     
     static GameObject CreateLabel(Transform parent, string text, float width)
     {
