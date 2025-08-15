@@ -56,6 +56,8 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Game Settings: {currentGameSettings != null}");
         Debug.Log($"Map Manager: {mapManager != null}");
         Debug.Log($"Camera controller: {cameraController != null}");
+        
+        InitializeRTSSystems();
     }
     
     void InitializeGameFromSettings()
@@ -128,6 +130,20 @@ public class GameManager : MonoBehaviour
             unitSpawner.playerIndex = playerIndex;
             unitSpawner.playerColor = playerSetup.playerColor;
             
+            var clickHandler = existingCapital.GetComponent<BuildingClickHandler>();
+            if (clickHandler == null)
+            {
+                clickHandler = existingCapital.AddComponent<BuildingClickHandler>();
+            }
+            clickHandler.playerIndex = playerIndex;
+            
+            var resourceManager = existingCapital.GetComponent<ResourceManager>();
+            if (resourceManager == null)
+            {
+                resourceManager = existingCapital.AddComponent<ResourceManager>();
+            }
+            resourceManager.playerIndex = playerIndex;
+            
             playerCapitals[playerIndex] = existingCapital;
             
             if (playerSetup.playerType == PlayerType.Human)
@@ -158,6 +174,12 @@ public class GameManager : MonoBehaviour
             spawnPointObj.transform.localPosition = Vector3.forward * 1.5f;
             unitSpawner.spawnPoint = spawnPointObj.transform;
             
+            var clickHandler = capital.AddComponent<BuildingClickHandler>();
+            clickHandler.playerIndex = playerIndex;
+            
+            var resourceManager = capital.AddComponent<ResourceManager>();
+            resourceManager.playerIndex = playerIndex;
+            
             playerCapitals[playerIndex] = capital;
             
             // If this is the human player, set as the main capital for camera focus
@@ -168,6 +190,20 @@ public class GameManager : MonoBehaviour
         }
         
         Debug.Log($"Created capital with unit spawner for Player {playerIndex + 1} ({playerSetup.playerType}) at {spawnPosition}");
+    }
+    
+    void InitializeRTSSystems()
+    {
+        if (gameCamera != null)
+        {
+            var selectionManager = gameCamera.GetComponent<SelectionManager>();
+            if (selectionManager == null)
+            {
+                selectionManager = gameCamera.AddComponent<SelectionManager>();
+            }
+        }
+        
+        Debug.Log("RTS systems initialized!");
     }
     
     void Update()

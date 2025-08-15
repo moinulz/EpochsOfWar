@@ -62,7 +62,14 @@ public static class CreateMainMenuScene
         var canvas = canvasGO.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
-        UIDesignSystem.SetupResponsiveCanvas(scaler);
+        
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+        scaler.physicalUnit = CanvasScaler.Unit.Points;
+        scaler.fallbackScreenDPI = 96f;
+        scaler.defaultSpriteDPI = 96f;
 
         // Background with modern gradient effect
         var bg = new GameObject("Background", typeof(Image));

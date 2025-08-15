@@ -18,11 +18,13 @@ public abstract class Unit : MonoBehaviour
     protected bool isSelected = false;
     protected Vector3 targetPosition;
     protected bool isMoving = false;
+    protected GameObject selectionIndicator;
     
     protected virtual void Start()
     {
         targetPosition = transform.position;
         SetPlayerColor();
+        CreateSelectionIndicator();
     }
     
     protected virtual void Update()
@@ -61,6 +63,34 @@ public abstract class Unit : MonoBehaviour
         else
         {
             isMoving = false;
+        }
+    }
+    
+    void CreateSelectionIndicator()
+    {
+        selectionIndicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        selectionIndicator.name = "SelectionRing";
+        selectionIndicator.transform.SetParent(transform);
+        selectionIndicator.transform.localPosition = Vector3.zero;
+        selectionIndicator.transform.localScale = new Vector3(4f, 0.1f, 4f);
+        
+        var renderer = selectionIndicator.GetComponent<Renderer>();
+        var material = new Material(Shader.Find("Standard"));
+        material.color = new Color(0, 1, 0, 0.5f);
+        renderer.material = material;
+        
+        var collider = selectionIndicator.GetComponent<Collider>();
+        if (collider != null) Destroy(collider);
+        
+        selectionIndicator.SetActive(false);
+    }
+    
+    public virtual void SetSelected(bool selected)
+    {
+        isSelected = selected;
+        if (selectionIndicator != null)
+        {
+            selectionIndicator.SetActive(selected);
         }
     }
 }
