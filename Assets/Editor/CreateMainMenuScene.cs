@@ -46,19 +46,19 @@ public static class CreateMainMenuScene
         es.AddComponent<UnityEngine.EventSystems.EventSystem>();
         es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 
-        // --- Ensure there is a camera in the scene ---
-var camGO = new GameObject("Main Camera");
-var cam = camGO.AddComponent<Camera>();
-camGO.AddComponent<AudioListener>();
-camGO.tag = "MainCamera";
-// Good defaults for menu
-cam.clearFlags = CameraClearFlags.SolidColor;
-cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f, 1f);
-cam.orthographic = false;
-cam.transform.position = new Vector3(0f, 0f, -10f);
-cam.transform.rotation = Quaternion.identity;
+    // --- Ensure there is a camera in the scene ---
+    var camGO = new GameObject("Main Camera");
+    var cam = camGO.AddComponent<Camera>();
+    camGO.AddComponent<AudioListener>();
+    camGO.tag = "MainCamera";
+    // Good defaults for menu
+    cam.clearFlags = CameraClearFlags.SolidColor;
+    cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f, 1f);
+    cam.orthographic = false;
+    cam.transform.position = new Vector3(0f, 0f, -10f);
+    cam.transform.rotation = Quaternion.identity;
 
-        var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+    var canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvas = canvasGO.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.GetComponent<CanvasScaler>();
@@ -970,6 +970,54 @@ cam.transform.rotation = Quaternion.identity;
         layout.preferredWidth = width;
     }
     
+    static void CreateMobilePlayerRow(Transform parent, string playerName, string difficulty, int wood, int stone, int iron, int gold, string team, bool canRemove)
+    {
+        var row = new GameObject($"PlayerRow_{playerName}", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
+        row.transform.SetParent(parent, false);
+        
+        var rowImg = row.GetComponent<Image>();
+        rowImg.color = new Color(0.08f, 0.12f, 0.16f, 0.6f);
+        
+        var hlg = row.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 5f;
+        hlg.padding = new RectOffset(10, 10, 8, 8);
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+        
+        var rowLayout = row.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 50;
+        
+        // Player name
+        CreateRowLabel(row.transform, playerName, 120);
+        
+        // Difficulty dropdown or label
+        if (playerName == "Player")
+        {
+            CreateRowLabel(row.transform, "Human", 100);
+        }
+        else
+        {
+            var diffDropdown = CreateCompactMilitaryDropdown(row.transform, new[] { "Easy", "Medium", "Hard", "Expert" }, 100);
+            diffDropdown.value = difficulty == "Easy" ? 0 : difficulty == "Medium" ? 1 : difficulty == "Hard" ? 2 : 3;
+        }
+        
+        // Resource fields
+        CreateResourceField(row.transform, wood.ToString(), 80);
+        CreateResourceField(row.transform, stone.ToString(), 80);
+        CreateResourceField(row.transform, iron.ToString(), 80);
+        CreateResourceField(row.transform, gold.ToString(), 80);
+        
+        // Team dropdown
+        var teamDropdown = CreateCompactMilitaryDropdown(row.transform, new[] { "None", "Team1", "Team2", "Team3" }, 100);
+        teamDropdown.value = team == "None" ? 0 : team == "Team1" ? 1 : team == "Team2" ? 2 : 3;
+        
+        // Remove button or blank
+        if (canRemove)
+        {
+            var removeBtn = CreateSmallMilitaryButton(row.transform, "Remove", new Color(0.6f, 0.2f, 0.1f, 1f), 80);
+        }
         else
         {
             CreateRowLabel(row.transform, "", 80); // Empty space
@@ -1256,6 +1304,18 @@ cam.transform.rotation = Quaternion.identity;
         CreateResourceMini(row.transform, "Gold", "1000");
     }
     
+    static Color GetPlayerColor(int index)
+    {
+        Color[] colors = {
+            new Color(0.2f, 0.6f, 1f, 1f),    // Blue
+            new Color(1f, 0.3f, 0.3f, 1f),    // Red  
+            new Color(0.3f, 0.8f, 0.3f, 1f),  // Green
+            new Color(1f, 0.8f, 0.2f, 1f),    // Yellow
+            new Color(0.8f, 0.3f, 0.8f, 1f),  // Purple
+            new Color(1f, 0.5f, 0.1f, 1f),    // Orange
+        };
+        return colors[index % colors.Length];
+    }
     
     static GameObject CreateLabel(Transform parent, string text, float width)
     {
@@ -1913,7 +1973,6 @@ cam.transform.rotation = Quaternion.identity;
         CreateResourcesSummary(resourcesSection.transform);
     }
 
-
     static void CreateResourcesSummary(Transform parent)
     {
         var resBar = new GameObject("StartingResourcesBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image));
@@ -1988,10 +2047,6 @@ cam.transform.rotation = Quaternion.identity;
             if (gameModeMenu != null) gameModeMenu.ShowMainGameModeSelection();
         });
     }
-
-
-
-
 
     // Returns a reliable default font for editor-time UI building in Unity 6+
     static Font GetDefaultFont()
