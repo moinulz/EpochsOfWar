@@ -50,31 +50,16 @@ public class UnitSpawner : MonoBehaviour
         {
             if (keyboard.wKey.wasPressedThisFrame)
             {
+                Debug.Log("W key pressed - spawning worker (testing mode)");
                 SpawnWorker();
             }
             if (keyboard.sKey.wasPressedThisFrame)
             {
+                Debug.Log("S key pressed - spawning soldier (testing mode)");
                 SpawnSoldier();
             }
         }
         
-        Mouse mouse = Mouse.current;
-        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
-        {
-            HandleMouseClick();
-        }
-    }
-    
-    void HandleMouseClick()
-    {
-        Ray ray = playerCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            if (hit.collider.gameObject == gameObject)
-            {
-                SpawnWorker();
-            }
-        }
     }
     
     public void SpawnWorker()

@@ -65,12 +65,6 @@ public class BuildingPlacer : MonoBehaviour
             }
         }
         
-        // Toggle placement mode with B key
-        Keyboard kb = Keyboard.current;
-        if (kb != null && kb.bKey.wasPressedThisFrame)
-        {
-            TogglePlacementMode();
-        }
     }
     
     void UpdateBuildingPreview()
@@ -141,6 +135,15 @@ public class BuildingPlacer : MonoBehaviour
         else
         {
             CancelPlacement();
+        }
+    }
+    
+    public void StartBuildingPlacement(GameObject buildingPrefab)
+    {
+        SetBuildingPrefab(buildingPrefab);
+        if (!isPlacementMode)
+        {
+            TogglePlacementMode();
         }
     }
     
